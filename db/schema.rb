@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_21_044553) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_21_045003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
@@ -31,6 +31,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_044553) do
     t.datetime "updated_at", null: false
     t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
     t.index ["published"], name: "index_episodes_on_published"
+  end
+
+  create_table "podcast_hosts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "profile_id", null: false
+    t.uuid "podcast_id", null: false
+    t.string "state"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["podcast_id"], name: "index_podcast_hosts_on_podcast_id"
+    t.index ["profile_id"], name: "index_podcast_hosts_on_profile_id"
   end
 
   create_table "podcasts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -60,4 +70,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_044553) do
   end
 
   add_foreign_key "episodes", "podcasts"
+  add_foreign_key "podcast_hosts", "podcasts"
+  add_foreign_key "podcast_hosts", "profiles"
 end
