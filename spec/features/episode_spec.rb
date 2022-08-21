@@ -1,9 +1,9 @@
 require "rails_helper"
 
 RSpec.feature "Episodes", type: :feature do
-  pending "add some scenarios (or delete) #{__FILE__}"
-
   scenario "Create a new episode" do
+    pending "check correctness"
+
     visit "/"
     click_on "New Episode"
 
