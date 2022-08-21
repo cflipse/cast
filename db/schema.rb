@@ -10,11 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_21_043500) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_21_043810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.citext "login", null: false
+    t.citext "email", null: false
+    t.string "display_name", null: false
+    t.string "persistence_token"
+    t.text "bio"
+    t.string "avatar"
+    t.string "roles", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_profiles_on_email"
+    t.index ["login"], name: "index_profiles_on_login"
+    t.index ["persistence_token"], name: "index_profiles_on_persistence_token"
+  end
 
 end
