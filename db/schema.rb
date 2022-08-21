@@ -10,12 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_21_044306) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_21_044553) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "episodes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name"
+    t.integer "number"
+    t.integer "season"
+    t.text "description"
+    t.uuid "podcast_id", null: false
+    t.jsonb "audio_data"
+    t.boolean "explicit"
+    t.text "show_notes"
+    t.datetime "published", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
+    t.index ["published"], name: "index_episodes_on_published"
+  end
 
   create_table "podcasts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
@@ -43,4 +59,5 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_044306) do
     t.index ["persistence_token"], name: "index_profiles_on_persistence_token"
   end
 
+  add_foreign_key "episodes", "podcasts"
 end
