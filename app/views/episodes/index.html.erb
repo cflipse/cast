@@ -1,0 +1,7 @@
+<h1><%= @podcast.name %></h1>
+
+<ul id="episodes">
+  <% @episodes.each do |ep| %>
+    <li><%= link_to ep.name, podcast_episode_path(@podcast, ep) %></li>
+  <% end %>
+</ul>

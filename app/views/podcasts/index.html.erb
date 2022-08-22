@@ -1,0 +1,7 @@
+<h1>Podcasts</h1>
+
+<ul>
+<% @podcasts.each do |cast| %>
+  <li><%= link_to cast.name, podcast_episodes_path(cast) %>
+<% end %>
+</ul>
