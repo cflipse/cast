@@ -1,7 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "RSS Feed" do
-  let(:podcast) { create :podcast, name: "Bone, Stone & Obsidian", slug: "bso" }
+  let(:podcast) { create :podcast, name: "Bone, Stone & Obsidian", slug: "bso", hosts: hosts }
+  let(:hosts) { create_list :profile, 2 }
 
   it "provides a list of all episodes" do
     create_list :episode, 7, podcast: podcast
