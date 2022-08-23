@@ -72,10 +72,13 @@ end
 
 group :development, :test do
   gem "factory_bot_rails", require: false
+  gem "faker"
+
   gem "dotenv-rails"
   gem "brakeman"
   gem "standard", require: false
   gem "rubocop", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rails", require: false
+
 end
