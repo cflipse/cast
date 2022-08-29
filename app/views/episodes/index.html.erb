@@ -1,4 +1,5 @@
 <h1><%= @podcast.name %></h1>
+<%= link_to "feed", podcast_episodes_url(@podcast, format: :rss) %>
 
 <ul id="episodes">
   <% @episodes.each do |ep| %>

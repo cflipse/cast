@@ -12,5 +12,10 @@ RSpec.describe "RSS Feed" do
     click_on "Bone, Stone & Obsidian"
 
     expect(page).to have_selector("#episodes li", count: 7)
+
+    click_on "feed"
+    feed = Nokogiri.parse(page.body)
+
+    expect(feed.search("item title").count).to eq 7
   end
 end

@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :podcast do
-    name { [Faker::Haker.ingverb, Faker::Hacker.noun].join(" ") }
-    slug { name.downcase.slugify }
+    name { [Faker::Hacker.ingverb, Faker::Hacker.noun].join(" ") }
+    slug { name.downcase.parameterize }
     explicit { false }
   end
 end
