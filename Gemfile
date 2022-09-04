@@ -35,6 +35,8 @@ gem "bootsnap", require: false
 gem "shrine"
 gem "aws-sdk-s3"
 
+gem "taglib-ruby"
+
 gem "acts-as-taggable-on"
 
 gem "omniauth"
@@ -74,11 +76,12 @@ group :development, :test do
   gem "factory_bot_rails", require: false
   gem "faker"
 
+  gem "pry"
+
   gem "dotenv-rails"
   gem "brakeman"
   gem "standard", require: false
   gem "rubocop", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rails", require: false
-
 end

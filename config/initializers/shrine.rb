@@ -21,8 +21,10 @@ Shrine.storages = {
 }
 
 Shrine.plugin :activerecord
+Shrine.plugin :add_metadata
 Shrine.plugin :determine_mime_type
 Shrine.plugin :pretty_location
 Shrine.plugin :cached_attachment_data
+Shrine.plugin :type_predicates
 
 Shrine.plugin :url_options, system: {public: true, host: ENV["SPACES_HOST"]} if ENV["SPACES_HOST"].present?

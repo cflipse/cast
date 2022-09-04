@@ -26,11 +26,9 @@ xml.rss version: "2.0" do
 
         xml.guid episode.id
 
-        # todo:  duration field.  can we calculate, or must we input?
-        # xml.tag! "itunes:duration", episode.duration
+        xml.tag! "itunes:duration", episode.duration
 
-        # TODO manage the episode file structure
-        # xml.enclosure url: episode.file_url, type: episode.file.mime_type, episode.file.size
+        xml.enclosure url: episode.audio_url, type: episode.audio.mime_type, length: episode.audio.size
       end
     end
   end
