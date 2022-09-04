@@ -6,6 +6,8 @@ class Episode < ApplicationRecord
     uniqueness: {scope: :podcast_id},
     allow_nil: true
 
+  include AudioUploader::Attachment(:audio)
+
   def title
     if number
       "Episode #{number}: #{name}"

@@ -1,0 +1,2 @@
+class AudioUploader < Shrine
+end
