@@ -1,10 +1,6 @@
 class EpisodesController < ApplicationController
   before_action do
-    @podcast = Podcast.find(params[:podcast_id])
-  end
-
-  def index
-    @episodes = @podcast.episodes
+    @podcast = Podcast.find_by(slug: params[:podcast_id])
   end
 
   def new

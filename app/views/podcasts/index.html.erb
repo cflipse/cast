@@ -4,7 +4,7 @@
 
 <ul>
 <% @podcasts.each do |cast| %>
-  <li><%= link_to cast.name, podcast_episodes_path(cast) %>
+  <li><%= link_to cast.name, podcast_path(cast) %>
 <% end %>
 </ul>
 

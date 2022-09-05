@@ -18,7 +18,7 @@ xml.rss version: "2.0" do
 
     xml.tag! "itunes:new-feed-url", podcast_episodes_url(@podcast, format: :rss)
 
-    @episodes.each do |episode|
+    @podcast.episodes.each do |episode|
       xml.item do
         xml.title episode.title
         xml.description episode.description

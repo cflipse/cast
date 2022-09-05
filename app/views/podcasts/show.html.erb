@@ -1,6 +1,7 @@
 <h2><%= @podcast.name %></h2>
 
 <%= image_tag @podcast.image_url if @podcast.image.present? %>
+<%= link_to "feed", podcast_url(@podcast, format: :rss) %>
 
 <p>
 <%= @podcast.description %>
@@ -13,17 +14,19 @@
 <% end %>
 
 
-<% @podcast.episodes.each do |episode| %>
-  <article>
-    <h3><%= episode.title %></h3>
-    <p>
-      <%= episode.description %>
-    </p>
+<section id="episodes">
+  <% @podcast.episodes.each do |episode| %>
+    <article>
+      <h3><%= episode.title %></h3>
+      <p>
+        <%= episode.description %>
+      </p>
 
-    <%= audio_tag episode.audio_url, controls: true if episode.audio.present? %>
-  </article>
-<% end %>
+      <%= audio_tag episode.audio_url, controls: true if episode.audio.present? %>
+    </article>
+  <% end %>
 
-<section>
-  <%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+  <footer>
+    <%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+  </footer>
 </section>
