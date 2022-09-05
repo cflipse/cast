@@ -14,6 +14,7 @@ xml.rss version: "2.0" do
     xml.description @podcast.description
     xml.category "Games &amp; Hobbies"
     xml.language "en-us"
+    xml.lastBuildDate @podcast.updated_at
 
     xml.tag! "itunes:new-feed-url", podcast_episodes_url(@podcast, format: :rss)
 

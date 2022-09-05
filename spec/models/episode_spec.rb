@@ -21,4 +21,11 @@ RSpec.describe Episode do
       end
     end
   end
+
+  specify "changes update the parent podcast" do
+    podcast = create :podcast, updated_at: 5.days.ago
+    create :episode, podcast: podcast
+
+    expect(podcast.updated_at).to be_within(1.second).of(Time.zone.now)
+  end
 end

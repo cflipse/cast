@@ -1,5 +1,5 @@
 class Episode < ApplicationRecord
-  belongs_to :podcast
+  belongs_to :podcast, touch: true
 
   include AudioUploader::Attachment(:audio)
 
