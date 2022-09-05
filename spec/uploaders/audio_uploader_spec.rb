@@ -12,4 +12,13 @@ RSpec.describe AudioUploader do
     expect(audio.duration).to eq 3286 # length of actual episode
     expect(audio.size).to eq file.size
   end
+
+  it "requires an audio file" do
+    logo = Rails.root.join("spec/fixtures/bso-logo.jpg")
+    episode = Episode.new audio: File.open(logo)
+
+    episode.valid?
+
+    expect(episode.errors[:audio]).to be_present
+  end
 end
