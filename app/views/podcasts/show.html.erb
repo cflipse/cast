@@ -1,9 +1,29 @@
 <h2><%= @podcast.name %></h2>
 
+<%= image_tag @podcast.image_url if @podcast.image.present? %>
+
+<p>
 <%= @podcast.description %>
+</p>
 
 <% if @podcast.explicit %>
-  warning: Contains explicit content
+  <div>
+    <em>warning: Contains explicit content</em>
+  </div>
 <% end %>
 
-<%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+
+<% @podcast.episodes.each do |episode| %>
+  <article>
+    <h3><%= episode.title %></h3>
+    <p>
+      <%= episode.description %>
+    </p>
+
+    <%= audio_tag episode.audio_url, controls: true if episode.audio.present? %>
+  </article>
+<% end %>
+
+<section>
+  <%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+</section>
