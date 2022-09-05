@@ -5,3 +5,5 @@
 <% if @podcast.explicit %>
   warning: Contains explicit content
 <% end %>
+
+<%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
