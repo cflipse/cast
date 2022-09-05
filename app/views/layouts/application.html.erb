@@ -22,6 +22,15 @@
   </head>
 
   <body>
+
+    <header>
+      <h1>casts.athas.org</h1>
+
+      <% flash.each do |key, message| %>
+        <%= tag.div message, class: key %>
+      <% end %>
+    </header>
+
     <%= yield %>
   </body>
 </html>

@@ -1,7 +1,11 @@
-<h1>Podcasts</h1>
+<header>
+  <h1>Podcasts</h1>
+</header>
 
 <ul>
 <% @podcasts.each do |cast| %>
   <li><%= link_to cast.name, podcast_episodes_path(cast) %>
 <% end %>
 </ul>
+
+<%= link_to "New Podcast", new_podcast_url %>

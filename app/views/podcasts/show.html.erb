@@ -1,0 +1,7 @@
+<h2><%= @podcast.name %></h2>
+
+<%= @podcast.description %>
+
+<% if @podcast.explicit %>
+  warning: Contains explicit content
+<% end %>

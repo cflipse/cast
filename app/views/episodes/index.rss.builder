@@ -5,8 +5,7 @@ xml.rss version: "2.0" do
     xml.link podcast_url(@podcast)
     xml.title @podcast.name
 
-    # TODO need to add a cover image for each podcast
-    # xml.tag! "itunes.image", href: @podcast.cover
+    xml.tag! "itunes.image", href: @podcast.image
 
     xml.tag! "itunes:owner" do
       xml.tag! "itunes:email", "flip@athas.org"
