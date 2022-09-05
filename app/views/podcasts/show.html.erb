@@ -13,6 +13,14 @@
   </div>
 <% end %>
 
+<section id="hosts">
+  <ul>
+    <% @podcast.hosts.each do |host| %>
+      <li><%= host.display_name %></li>
+    <% end %>
+  </ul>
+</section>
+
 
 <section id="episodes">
   <% @podcast.episodes.each do |episode| %>

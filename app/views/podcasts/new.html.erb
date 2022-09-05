@@ -31,6 +31,12 @@
   </div>
 
   <div>
+    <%= form.label :host_ids, "Hosts" %>
+    <%= form.collection_select :host_ids, Profile.all,
+      :id, :display_name, { prompt: true }, { multiple: true } %>
+  </div>
+
+  <div>
     <%= form.label :image %>
     <%= form.hidden_field :image, value: @podcast.cached_image_data %>
     <%= form.file_field :image %>

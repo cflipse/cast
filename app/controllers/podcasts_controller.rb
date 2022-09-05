@@ -9,7 +9,7 @@ class PodcastsController < ApplicationController
 
   def create
     @podcast = Podcast.new params.require(:podcast)
-      .permit(:name, :description, :explicit, :image)
+      .permit(:name, :description, :explicit, :image, :slug, host_ids: [])
 
     @podcast.generate_slug
 
