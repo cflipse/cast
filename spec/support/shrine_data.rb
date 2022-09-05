@@ -19,20 +19,20 @@ module ShrineData
 
     # for performance we skip metadata extraction and assign test metadata
     Shrine.upload(file, :store, metadata: false).tap do |uf|
-      uf.metadata.merge! "size" => File.size(file.path),
+      uf.metadata.merge! "size" => 83642,
         "mime_type" => "image/jpeg", "filename" => "bso-logo.jpg"
     end
   end
 
   def uploaded_audio
-    file = File.open("spec/fixtures/bso001-templars.mp3")
+    file = File.open("spec/fixtures/Audio-teaser-for-The-Streets-of-Avalon-KS.mp3")
 
     Shrine.upload(file, :store, metadata: false).tap do |uf|
       uf.metadata.merge!(
         "mime_type" => "audio/mpeg",
         "extension" => "mp3",
-        "duration" => 3286,
-        "size" => File.size(file.path)
+        "duration" => 118,
+        "size" => 895233
       )
     end
   end
