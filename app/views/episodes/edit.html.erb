@@ -1,0 +1,54 @@
+<% if @episode.errors.any? %>
+  <ul>
+  <% @episode.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+  <% end %>
+  </ul>
+<% end %>
+
+
+<%= form_with model: @episode, url: [@podcast, @episode] do |form| %>
+  <div>
+    <%= form.label :name %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :season %>
+    <%= form.number_field :season %>
+  </div>
+
+  <div>
+    <%= form.label :number %>
+    <%= form.number_field :number %>
+  </div>
+
+  <div>
+    <%= form.label :description %>
+    <%= form.text_area :description %>
+  </div>
+
+  <div>
+    <%= form.label :published %>
+    <%= form.date_field :published %>
+  </div>
+
+  <div>
+    <%= form.label :audio %>
+    <%= form.hidden_field :audio, value: @episode.cached_audio_data %>
+    <%= form.file_field :audio %>
+  </div>
+
+  <div>
+    <%= form.check_box :explicit %>
+    <%= form.label :explicit, "Contains explicit content" %>
+  </div>
+
+  <div>
+    <%= form.label :show_notes %>
+    <%= form.text_area :show_notes %>
+  </div>
+
+
+  <%= form.submit %>
+<% end %>

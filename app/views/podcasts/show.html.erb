@@ -17,7 +17,7 @@
 <section id="episodes">
   <% @podcast.episodes.each do |episode| %>
     <article>
-      <h3><%= episode.title %></h3>
+      <h3><%= link_to episode.title, podcast_episode_path(@podcast, episode) %></h3>
       <p>
         <%= episode.description %>
       </p>
