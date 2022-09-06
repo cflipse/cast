@@ -1,0 +1,47 @@
+<% if @podcast.errors.any? %>
+  <ul>
+  <% @podcast.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+  <% end %>
+  </ul>
+<% end %>
+
+
+<%= form_with model: @podcast  do |form| %>
+  <div>
+    <%= form.label :name %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :slug %>
+    <%= form.text_field :slug, disabled: @podcast.persisted? %>
+    <em>URL slug for podcast.  Will be auto-generated if not given</em>
+  </div>
+
+  <div>
+    <%= form.label :description %>
+    <%= form.text_area :description %>
+    <em>Plaintext description of the podcast</em>
+  </div>
+
+  <div>
+    <%= form.check_box :explicit %>
+    <%= form.label :explicit, "Contains explicit content" %>
+  </div>
+
+  <div>
+    <%= form.label :host_ids, "Hosts" %>
+    <%= form.collection_select :host_ids, Profile.all,
+      :id, :display_name, { prompt: true }, { multiple: true } %>
+  </div>
+
+  <div>
+    <%= form.label :image %>
+    <%= form.hidden_field :image, value: @podcast.cached_image_data %>
+    <%= form.file_field :image %>
+  </div>
+
+  <%= form.submit %>
+
+<% end %>

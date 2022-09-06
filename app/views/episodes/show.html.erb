@@ -1,0 +1,24 @@
+<h1><%= @podcast.name %></h1>
+
+
+<h2><%= @episode.title %></h2>
+
+<%= image_tag @podcast.image_url if @podcast.image.present? %>
+
+
+<p>
+  <%= @episode.description %>
+</p>
+
+<%= audio_tag @episode.audio_url, controls: true if @episode.audio.present? %>
+
+<hr>
+
+<%= @episode.show_notes %>
+
+
+<hr>
+
+<footer>
+  <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
+</footer>

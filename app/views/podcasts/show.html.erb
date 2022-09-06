@@ -1,0 +1,40 @@
+<h2><%= @podcast.name %></h2>
+
+<%= image_tag @podcast.image_url if @podcast.image.present? %>
+<%= link_to "feed", podcast_url(@podcast, format: :rss) %>
+
+<p>
+<%= @podcast.description %>
+</p>
+
+<% if @podcast.explicit %>
+  <div>
+    <em>warning: Contains explicit content</em>
+  </div>
+<% end %>
+
+<section id="hosts">
+  <ul>
+    <% @podcast.hosts.each do |host| %>
+      <li><%= host.display_name %></li>
+    <% end %>
+  </ul>
+</section>
+
+
+<section id="episodes">
+  <% @podcast.episodes.each do |episode| %>
+    <article>
+      <h3><%= link_to episode.title, podcast_episode_path(@podcast, episode) %></h3>
+      <p>
+        <%= episode.description %>
+      </p>
+
+      <%= audio_tag episode.audio_url, controls: true if episode.audio.present? %>
+    </article>
+  <% end %>
+
+  <footer>
+    <%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+  </footer>
+</section>

@@ -1,0 +1,22 @@
+<h2><%= @profile.display_name %></h2>
+
+<%= image_tag @profile.avatar_url %>
+
+<p>
+<%= @profile.bio %>
+</p>
+
+
+<% if @profile.podcasts.any? %>
+<hr>
+
+<h3>Hosting</h3>
+<% @profile.podcasts.each do |podcast| %>
+  <article>
+    <%= link_to podcast.name, podcast_path(podcast) %>
+    <p><%= podcast.description %></p>
+  </article>
+<% end %>
+<% end %>
+
+<%= link_to "Edit Profile", edit_profile_path(@profile) %>

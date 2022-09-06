@@ -1,0 +1,18 @@
+<header>
+  <h1>Podcasts</h1>
+</header>
+
+<ul>
+<% @podcasts.each do |cast| %>
+  <li><%= link_to cast.name, podcast_path(cast) %>
+<% end %>
+</ul>
+
+<ul>
+  <% @profiles.each do |profile| %>
+    <li><%= link_to profile.display_name, profile_path(profile) %></li>
+  <% end %>
+</ul>
+
+<%= link_to "New Podcast", new_podcast_url %>
+<%= link_to "Add Profile", new_profile_url %>

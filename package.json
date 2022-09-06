@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "vite": "^3.0.8",
+    "vite-plugin-ruby": "^3.1.2"
+  },
+  "dependencies": {
+    "@rails/activestorage": "^7.0.3-1",
+    "@rails/ujs": "^7.0.3-1",
+    "stimulus": "^3.1.0",
+    "stimulus-vite-helpers": "^3.0.0",
+    "typescript": "^4.7.4",
+    "vite-plugin-full-reload": "^1.0.4",
+    "vite-plugin-stimulus-hmr": "^3.0.0",
+    "vite-plugin-windicss": "^1.8.7",
+    "windicss": "^3.5.6"
+  }
+}
