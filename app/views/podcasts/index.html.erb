@@ -8,5 +8,11 @@
 <% end %>
 </ul>
 
+<ul>
+  <% @profiles.each do |profile| %>
+    <li><%= link_to profile.display_name, profile_path(profile) %></li>
+  <% end %>
+</ul>
+
 <%= link_to "New Podcast", new_podcast_url %>
 <%= link_to "Add Profile", new_profile_url %>

@@ -11,6 +11,10 @@ class Profile < ApplicationRecord
     avatar.presence || gravatar_url
   end
 
+  def to_param
+    login
+  end
+
   private
 
   def gravatar_url

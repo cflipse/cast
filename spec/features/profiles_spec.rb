@@ -9,7 +9,7 @@ RSpec.describe "Profiles" do
     display_name = Faker::Internet.name
 
     fill_in "Display name", with: display_name
-    fill_in "Login", with: Faker::Internet.username
+    fill_in "Login", with: Faker::Internet.username(separators: %w[- _])
 
     fill_in "Email", with: Faker::Internet.email
 
@@ -21,7 +21,6 @@ RSpec.describe "Profiles" do
   end
 
   scenario "Editing profiles" do
-    pending
     profile = create :profile
 
     visit "/"
@@ -29,12 +28,10 @@ RSpec.describe "Profiles" do
 
     click_on "Edit Profile"
 
-    lorem = Faker::Lorem.paragraphs(number: 6).join("\n")
-
-    fill_in "Bio", with: lorem
+    fill_in "Bio", with: "This is a test"
 
     expect {
       click_on "Update Profile"
-    }.to change(profile, :bio).to lorem
+    }.to change { profile.reload.bio }.to "This is a test"
   end
 end
