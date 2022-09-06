@@ -4,4 +4,18 @@ class Profile < ApplicationRecord
 
   validates :login, presence: true
   validates :email, presence: true, format: /.*@.+/
+
+  validates :display_name, presence: true
+
+  def avatar_url
+    avatar.presence || gravatar_url
+  end
+
+  private
+
+  def gravatar_url
+    digest = Digest::MD5.hexdigest(email.strip.downcase)
+
+    "https://gravatar.com/avatar/#{digest}"
+  end
 end

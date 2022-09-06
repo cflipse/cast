@@ -5,6 +5,8 @@ Rails.application.routes.draw do
   # root "articles#index"
   root "podcasts#index"
 
+  resources :profiles
+
   resources :podcasts do
     resources :episodes
   end
