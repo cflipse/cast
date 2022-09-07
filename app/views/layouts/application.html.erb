@@ -19,16 +19,20 @@
     -->
   </head>
 
-  <body>
+  <body >
+    <section class="container mx-auto py-12">
 
-    <header>
-      <h1 class="text-3xl font-bold">casts.athas.org</h1>
+      <header>
+        <h1 class="text-6xl font-bold">casts.athas.org</h1>
+      </header>
 
-      <% flash.each do |key, message| %>
-        <%= tag.div message, class: key %>
-      <% end %>
-    </header>
+      <main>
+        <% flash.each do |key, message| -%>
+          <%= tag.div message, class: key %>
+        <% end -%>
 
-    <%= yield %>
+        <%= yield %>
+      </main>
+    </section>
   </body>
 </html>
