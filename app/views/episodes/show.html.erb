@@ -7,14 +7,14 @@
 
 
 <p>
-  <%= @episode.description %>
+  <%= simple_format @episode.description %>
 </p>
 
 <%= audio_tag @episode.audio_url, controls: true if @episode.audio.present? %>
 
 <hr>
 
-<%= @episode.show_notes %>
+<%= markdown @episode.show_notes %>
 
 
 <hr>

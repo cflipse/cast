@@ -26,3 +26,12 @@ console.log('Visit the guide for more information: ', 'https://vite-ruby.netlify
 
 // Example: Import a stylesheet in app/frontend/index.css
 // import '~/index.css'
+
+import { Application } from '@hotwired/stimulus';
+import { registerControllers } from 'stimulus-vite-helpers';
+
+const application = Application.start()
+const controllers = import.meta.globEager('../controllers/**/*_controller.js');
+registerControllers(application, controllers);
+
+import "~/stylesheets/application.scss"

@@ -4,7 +4,7 @@
 <%= link_to "feed", podcast_url(@podcast, format: :rss) %>
 
 <p>
-<%= @podcast.description %>
+  <%= simple_format @podcast.description %>
 </p>
 
 <% if @podcast.explicit %>
@@ -27,7 +27,7 @@
     <article>
       <h3><%= link_to episode.title, podcast_episode_path(@podcast, episode) %></h3>
       <p>
-        <%= episode.description %>
+        <%= simple_format episode.description %>
       </p>
 
       <%= audio_tag episode.audio_url, controls: true if episode.audio.present? %>
