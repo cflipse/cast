@@ -3,3 +3,13 @@
 @tailwind utilities;
 
 @import "easymde/dist/easymde.min";
+
+@layer base {
+  h1 {
+    @apply  text-3xl;
+  }
+
+  a {
+    @apply underline;
+  }
+}
