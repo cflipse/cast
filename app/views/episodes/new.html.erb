@@ -7,28 +7,28 @@
 <% end %>
 
 
-<%= form_with model: @episode, url: [@podcast, @episode], class: "grid grid-cols-[fit-content(20rem)_minmax(60rem,1fr)] gap-3" do |form| %>
+<%= form_with model: @episode, builder: TailwindFormBuilder, url: [@podcast, @episode], class: "grid grid-cols-[fit-content(20rem)_minmax(60rem,1fr)] gap-3" do |form| %>
 
-  <%= form.label :name, class: "font-bold justify-self-end" %>
+    <%= form.label :name %>
     <%= form.text_field :name %>
 
-    <%= form.label :number, class: "font-bold justify-self-end" %>
+    <%= form.label :number %>
     <%= form.number_field :number %>
 
-    <%= form.label :description, class: "font-bold justify-self-end" %>
+    <%= form.label :description %>
     <%= form.text_area :description %>
 
-    <%= form.label :published, class: "font-bold justify-self-end" %>
+    <%= form.label :published %>
     <%= form.date_field :published %>
 
-    <%= form.label :audio, class: "font-bold justify-self-end" %>
+    <%= form.label :audio %>
     <%= form.hidden_field :audio, value: @episode.cached_audio_data %>
     <%= form.file_field :audio %>
 
     <%= form.check_box :explicit, class: "justify-self-end" %>
-    <%= form.label :explicit, "Contains explicit content" %>
+    <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin" %>
 
-    <%= form.label :show_notes, class: "font-bold justify-self-end" %>
+    <%= form.label :show_notes, class: "no-wrap" %>
     <%= form.text_area :show_notes %>
 
     <div class="col-span-2">
