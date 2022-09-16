@@ -7,44 +7,32 @@
 <% end %>
 
 
-<%= form_with model: @episode, url: [@podcast, @episode] do |form| %>
+<%= form_with model: @episode, url: [@podcast, @episode], class: "grid grid-cols-[fit-content(20rem)_minmax(60rem,1fr)] gap-3" do |form| %>
 
-  <div>
-    <%= form.label :name %>
+  <%= form.label :name, class: "font-bold justify-self-end" %>
     <%= form.text_field :name %>
-  </div>
 
-  <div>
-    <%= form.label :number %>
+    <%= form.label :number, class: "font-bold justify-self-end" %>
     <%= form.number_field :number %>
-  </div>
 
-  <div>
-    <%= form.label :description %>
+    <%= form.label :description, class: "font-bold justify-self-end" %>
     <%= form.text_area :description %>
-  </div>
 
-  <div>
-    <%= form.label :published %>
+    <%= form.label :published, class: "font-bold justify-self-end" %>
     <%= form.date_field :published %>
-  </div>
 
-  <div>
-    <%= form.label :audio %>
+    <%= form.label :audio, class: "font-bold justify-self-end" %>
     <%= form.hidden_field :audio, value: @episode.cached_audio_data %>
     <%= form.file_field :audio %>
-  </div>
 
-  <div>
-    <%= form.check_box :explicit %>
+    <%= form.check_box :explicit, class: "justify-self-end" %>
     <%= form.label :explicit, "Contains explicit content" %>
-  </div>
 
-  <div>
-    <%= form.label :show_notes %>
+    <%= form.label :show_notes, class: "font-bold justify-self-end" %>
     <%= form.text_area :show_notes %>
-  </div>
 
-
-  <%= form.submit %>
+    <div class="col-span-2">
+      <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
+      <%= link_to "Cancel", podcast_url(@podcast), class: "bg-gray-300 p-5 rounded-md font-bold" %>
+    </div>
 <% end %>
