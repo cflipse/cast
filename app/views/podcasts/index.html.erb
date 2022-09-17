@@ -1,18 +1,18 @@
+<%= render PodcastDescriptionComponent.with_collection @podcasts %>
+
 <header>
-  <h2>Podcasts</h2>
+  <h2 class="text-4xl">Profiles</h2>
 </header>
 
-<ul>
-<% @podcasts.each do |cast| %>
-  <li><%= link_to cast.name, podcast_path(cast) %>
-<% end %>
-</ul>
-
-<ul>
+<ul class="list-disc">
   <% @profiles.each do |profile| %>
     <li><%= link_to profile.display_name, profile_path(profile) %></li>
   <% end %>
 </ul>
 
-<%= link_to "New Podcast", new_podcast_url %>
-<%= link_to "Add Profile", new_profile_url %>
+<hr />
+
+<div class="my-4">
+  <%= link_to "New Podcast", new_podcast_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" %>
+  <%= link_to "New Profile", new_profile_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" %>
+</div>

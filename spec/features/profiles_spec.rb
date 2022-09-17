@@ -4,7 +4,7 @@ RSpec.describe "Profiles" do
   scenario "create a new profile" do
     visit "/"
 
-    click_on "Add Profile"
+    click_on "New Profile"
 
     display_name = Faker::Internet.name
 
