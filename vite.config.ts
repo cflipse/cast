@@ -6,7 +6,7 @@ import RubyPlugin from 'vite-plugin-ruby'
 export default defineConfig({
   plugins: [
     StimulusHMR(),
-    FullReload(['config/routes.rb', 'app/views/**/*']),
+    FullReload(['config/routes.rb', 'app/views/**/*', 'app/frontend/**/*', 'app/builders/**/*', 'app/components/**/*', 'app/helpers/**/*']),
     RubyPlugin(),
   ],
 })
