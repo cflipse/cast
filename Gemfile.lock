@@ -101,6 +101,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
+    childprocess (4.1.0)
     coderay (1.1.3)
     concurrent-ruby (1.1.10)
     content_disposition (1.0.0)
@@ -145,6 +146,8 @@ GEM
     jwt (2.4.1)
     kramdown (2.4.0)
       rexml
+    launchy (2.5.0)
+      addressable (~> 2.7)
     loofah (2.18.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -294,6 +297,12 @@ GEM
       rubocop (~> 1.31)
     ruby-progressbar (1.11.0)
     ruby2_keywords (0.0.5)
+    rubyzip (2.3.2)
+    selenium-webdriver (4.4.0)
+      childprocess (>= 0.5, < 5.0)
+      rexml (~> 3.2, >= 3.2.5)
+      rubyzip (>= 1.2.2, < 3.0)
+      websocket (~> 1.0)
     shrine (3.4.0)
       content_disposition (~> 1.0)
       down (~> 5.1)
@@ -327,6 +336,7 @@ GEM
       activemodel (>= 6.0.0)
       bindex (>= 0.4.0)
       railties (>= 6.0.0)
+    websocket (1.2.9)
     websocket-driver (0.7.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
@@ -349,6 +359,7 @@ DEPENDENCIES
   faker
   jbuilder
   kramdown
+  launchy
   omniauth
   omniauth-google-oauth2
   paper_trail
@@ -363,6 +374,7 @@ DEPENDENCIES
   rubocop
   rubocop-rails
   rubocop-rspec
+  selenium-webdriver
   shrine
   standard
   taglib-ruby

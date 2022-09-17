@@ -69,6 +69,9 @@ gem "turbo-rails"
 group :test do
   gem "rspec-rails"
   gem "capybara"
+
+  gem "selenium-webdriver"
+  gem "launchy"
 end
 
 group :development, :test do
