@@ -10,4 +10,12 @@ Rails.application.routes.draw do
   resources :podcasts do
     resources :episodes
   end
+
+  direct :arena do
+    "https://arena.athas.org"
+  end
+
+  direct :bwoa do
+    "https://athas.org"
+  end
 end

@@ -1,4 +1,4 @@
-<h1><%= @podcast.name %></h1>
+<h1><%= link_to @podcast.name, podcast_url(@podcast) %></h1>
 
 
 <h2><%= @episode.title %></h2>
