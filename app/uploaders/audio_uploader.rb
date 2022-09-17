@@ -14,4 +14,6 @@ class AudioUploader < Shrine
       end
     end
   end
+
+  plugin :remote_url, max_size: 200.megabytes
 end
