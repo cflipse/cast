@@ -5,7 +5,7 @@ xml.rss version: "2.0" do
     xml.link podcast_url(@podcast)
     xml.title @podcast.name
 
-    xml.tag! "itunes.image", href: @podcast.image
+    xml.tag! "itunes:image", href: @podcast.image
 
     xml.tag! "itunes:owner" do
       xml.tag! "itunes:email", "flip@athas.org"
