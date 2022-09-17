@@ -1,0 +1,46 @@
+<% if podcast.errors.any? %>
+  <ul>
+  <% podcast.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+  <% end %>
+  </ul>
+<% end %>
+
+
+<%= form_with model: podcast, builder: TailwindFormBuilder  do |form| %>
+
+  <%= form.grid do %>
+    <%= form.label :name %>
+    <%= form.text_field :name %>
+
+    <%= form.label :slug %>
+
+    <%= form.stack do %>
+      <%= form.text_field :slug, disabled: podcast.persisted? %>
+      <em>URL slug for podcast.  Will be auto-generated if not given</em>
+    <% end %>
+
+    <%= form.label :description %>
+    <%= form.stack do %>
+      <%= form.text_area :description %>
+      <em>Plaintext description of the podcast</em>
+    <% end %>
+
+    <%= form.check_box :explicit, class: "justify-self-end" %>
+    <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
+
+    <%= form.label :host_ids, "Hosts" %>
+    <%= form.collection_select :host_ids, Profile.all,
+      :id, :display_name, { prompt: true }, { multiple: true } %>
+
+    <%= form.label :image %>
+    <%= form.hidden_field :image, value: podcast.cached_image_data %>
+    <%= form.file_field :image %>
+
+    <%= form.actions do %>
+      <%= form.submit %>
+      <%= form.cancel root_url %>
+    <% end %>
+  <% end %>
+
+<% end %>

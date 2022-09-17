@@ -3,6 +3,7 @@ class TailwindFormBuilder < ActionView::Helpers::FormBuilder
 
   def label(method, text = nil, **opts, &block)
     classes = opts.delete(:class).to_s.split(" ")
+    classes << "pt-2" unless classes.any? { |c| c =~ /^pt?-/ }
     classes << "font-bold"
     classes << "whitespace-nowrap"
     classes << "justify-self-end" unless classes.any? { |c| c =~ /justify-self/ }
@@ -11,7 +12,7 @@ class TailwindFormBuilder < ActionView::Helpers::FormBuilder
   end
 
   def grid(&block)
-    tag.div class: "grid grid-cols-[fit-content(10rem)_minmax(40rem,1fr)] gap-3", &block
+    tag.div class: "grid grid-cols-[fit-content(10rem)_minmax(30rem,1fr)] gap-3", &block
   end
 
   def stack(&block)
@@ -25,7 +26,7 @@ class TailwindFormBuilder < ActionView::Helpers::FormBuilder
   def submit(text = nil, **opts)
     classes ||= opts.delete(:class).to_s.split(" ")
 
-    classes << "bg-stone-500"
+    classes << "bg-amber-700"
     classes << "p-4" unless classes.any? { |c| c =~ /^p.?-/ }
     classes << "rounded-md"
     classes << "text-gray-300"
