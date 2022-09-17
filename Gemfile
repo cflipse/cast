@@ -64,6 +64,8 @@ end
 gem "view_component"
 gem "vite_rails"
 
+gem "turbo-rails"
+
 group :test do
   gem "rspec-rails"
   gem "capybara"

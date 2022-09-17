@@ -304,6 +304,10 @@ GEM
     taglib-ruby (1.1.2)
     thor (1.2.1)
     timeout (0.3.0)
+    turbo-rails (1.1.1)
+      actionpack (>= 6.0.0)
+      activejob (>= 6.0.0)
+      railties (>= 6.0.0)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.2.0)
@@ -362,6 +366,7 @@ DEPENDENCIES
   shrine
   standard
   taglib-ruby
+  turbo-rails
   tzinfo-data
   view_component
   vite_rails
@@ -371,4 +376,4 @@ RUBY VERSION
    ruby 3.1.0p0
 
 BUNDLED WITH
-   2.3.7
+   2.3.22
