@@ -1,15 +1,40 @@
 class TailwindFormBuilder < ActionView::Helpers::FormBuilder
+  delegate :tag, :safe_join, :link_to, to: :@template
+
   def label(method, text = nil, **opts, &block)
-    classes = opts[:class].to_s.split(" ")
+    classes = opts.delete(:class).to_s.split(" ")
     classes << "font-bold"
-    classes << "justify-self-end" unless classes.any? {|c| c =~ /justify-self/ }
+    classes << "whitespace-nowrap"
+    classes << "justify-self-end" unless classes.any? { |c| c =~ /justify-self/ }
 
-    opts[:class] = classes.join(" ")
-
-    super(method, text, opts, &block)
+    super(method, text, class: classes.join(" "), **opts, &block)
   end
 
-  def text_field(method, **opts)
-    super(method, opts)
+  def grid(&block)
+    tag.div class: "grid grid-cols-[fit-content(10rem)_minmax(40rem,1fr)] gap-3", &block
+  end
+
+  def stack(&block)
+    tag.div class: "flex flex-col", &block
+  end
+
+  def actions(&block)
+    safe_join([tag.div, tag.div(&block)])
+  end
+
+  def submit(text = nil, **opts)
+    classes ||= opts.delete(:class).to_s.split(" ")
+
+    classes << "bg-stone-500"
+    classes << "p-4" unless classes.any? { |c| c =~ /^p.?-/ }
+    classes << "rounded-md"
+    classes << "text-gray-300"
+    classes << "font-bold"
+
+    super(text, class: classes.join(" "), **opts)
+  end
+
+  def cancel path
+    link_to "Cancel", path, class: "bg-gray-300 ml-2 p-5 rounded-md font-bold"
   end
 end

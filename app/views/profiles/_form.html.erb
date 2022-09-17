@@ -1,31 +1,28 @@
-<%= form_with model: profile do |form| %>
-  <div>
+<%= form_with model: profile, builder: TailwindFormBuilder do |form| %>
+
+  <% form.grid do %>
     <%= form.label :display_name %>
     <%= form.text_field :display_name %>
-  </div>
 
-  <div>
     <%= form.label :login %>
     <%= form.text_field :login %>
-  </div>
 
-  <div>
     <%= form.label :email %>
     <%= form.text_field :email %>
-  </div>
 
-
-  <div>
     <%= form.label :bio %>
     <%= form.text_area :bio %>
-  </div>
 
-  <div>
     <%= form.label :avatar, "Avatar URL" %>
-    <%= form.text_field :avatar %>
-    <em>Will default to gravater if not given</em>
-  </div>
+    <%= form.stack do %>
+      <%= form.text_field :avatar %>
+      <em>Will default to gravater if not given</em>
+    <% end %>
 
-  <%= form.submit %>
+    <%= form.actions do %>
+      <%= form.submit %>
+      <%= form.cancel root_path %>
+    <% end %>
 
+  <% end %>
 <% end %>

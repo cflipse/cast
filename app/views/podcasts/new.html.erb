@@ -7,41 +7,42 @@
 <% end %>
 
 
-<%= form_with model: @podcast  do |form| %>
-  <div>
+<%= form_with model: @podcast, builder: TailwindFormBuilder  do |form| %>
+
+  <div class="grid grid-cols-[fit-content(20rem)_minmax(60rem,1fr)] gap-3">
     <%= form.label :name %>
     <%= form.text_field :name %>
-  </div>
 
-  <div>
     <%= form.label :slug %>
-    <%= form.text_field :slug, disabled: @podcast.persisted? %>
-    <em>URL slug for podcast.  Will be auto-generated if not given</em>
-  </div>
 
-  <div>
+    <div class="flex flex-col">
+      <%= form.text_field :slug, disabled: @podcast.persisted? %>
+      <em>URL slug for podcast.  Will be auto-generated if not given</em>
+    </div>
+
     <%= form.label :description %>
-    <%= form.text_area :description %>
-    <em>Plaintext description of the podcast</em>
-  </div>
 
-  <div>
-    <%= form.check_box :explicit %>
-    <%= form.label :explicit, "Contains explicit content" %>
-  </div>
+    <div class="flex flex-col">
+      <%= form.text_area :description %>
+      <em>Plaintext description of the podcast</em>
+    </div>
 
-  <div>
+    <%= form.check_box :explicit, class: "justify-self-end" %>
+    <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin" %>
+
     <%= form.label :host_ids, "Hosts" %>
     <%= form.collection_select :host_ids, Profile.all,
       :id, :display_name, { prompt: true }, { multiple: true } %>
-  </div>
 
-  <div>
     <%= form.label :image %>
     <%= form.hidden_field :image, value: @podcast.cached_image_data %>
     <%= form.file_field :image %>
-  </div>
 
-  <%= form.submit %>
+    <span></span>
+    <div class="mt-4">
+      <%= form.submit class: "bg-amber-700 text-gray-200 p-4 rounded-md font-bold"  %>
+      <%= link_to "Cancel", root_url, class: "bg-gray-300 p-5 rounded-md font-bold" %>
+    </div>
+  </div>
 
 <% end %>
