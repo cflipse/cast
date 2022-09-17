@@ -10,7 +10,9 @@
   <%= simple_format @episode.description %>
 </p>
 
-<%= audio_tag @episode.audio_url, controls: true if @episode.audio.present? %>
+<div class="flex w-full sticky top-0 bottom-0">
+<%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
+</div>
 
 <hr>
 
