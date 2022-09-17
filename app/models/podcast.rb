@@ -1,13 +1,14 @@
 class Podcast < ApplicationRecord
   include CoverUploader::Attachment(:image)
 
-  has_many :episodes, -> { order :number }
+  has_many :episodes, -> { order :number },
+    dependent: :destroy
 
-  has_many :podcast_hosts
+  has_many :podcast_hosts, dependent: :destroy
   has_many :hosts, through: :podcast_hosts, source: :profile
 
   validates :name, presence: true
-  validates :slug, presence: true
+  validates :slug, presence: true, uniqueness: true
 
   def generate_slug
     self.slug = name.parameterize
