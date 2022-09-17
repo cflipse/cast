@@ -1,28 +1,30 @@
 <h1><%= link_to @podcast.name, podcast_url(@podcast) %></h1>
 
+<article class="bg-slate-200 shadow">
 
-<h2><%= @episode.title %></h2>
+  <header class="m-6">
+    <h2 class="text-2xl py-6"><%= @episode.title %></h2>
 
-<%= image_tag @podcast.image_url if @podcast.image.present? %>
-
-
-<p>
-  <%= simple_format @episode.description %>
-</p>
-
-<div class="flex w-full sticky top-0 bottom-0">
-<%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
-</div>
-
-<hr>
-
-<div class="prose">
-  <%= markdown @episode.show_notes %>
-</div>
+    <%= image_tag @podcast.image_url if @podcast.image.present? %>
 
 
-<hr>
+    <p>
+      <%= simple_format @episode.description %>
+    </p>
+  </header>
 
-<footer>
-  <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
-</footer>
+  <div class="flex w-full sticky top-0 bottom-0">
+  <%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
+  </div>
+
+
+  <div class="prose m-6">
+    <%= markdown @episode.show_notes %>
+  </div>
+
+
+
+  <footer class="m-6">
+    <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
+  </footer>
+</article>
