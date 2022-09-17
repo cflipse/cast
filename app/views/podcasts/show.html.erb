@@ -1,17 +1,25 @@
-<h2><%= @podcast.name %></h2>
+<h2 class="text-4xl font-bold tracking-wide text-red-700"><%= @podcast.name %></h2>
 
-<%= image_tag @podcast.image_url if @podcast.image.present? %>
-<%= link_to "feed", podcast_url(@podcast, format: :rss) %>
+[<%= link_to "feed", podcast_url(@podcast, format: :rss) %>]
 
-<p>
-  <%= simple_format @podcast.description %>
-</p>
 
-<% if @podcast.explicit %>
-  <div>
-    <em>warning: Contains explicit content</em>
+<div class="flex flex-row">
+  <div class="">
+    <%= image_tag @podcast.image_url if @podcast.image.present? %>
   </div>
-<% end %>
+
+  <div>
+    <p>
+    <%= simple_format @podcast.description %>
+    </p>
+
+    <% if @podcast.explicit %>
+      <div>
+        <em>warning: Contains explicit content</em>
+      </div>
+    <% end %>
+  </div>
+</div>
 
 <section id="hosts">
   <ul>
@@ -25,8 +33,8 @@
 <section id="episodes">
   <% @podcast.episodes.each do |episode| %>
     <article>
-      <h3><%= link_to episode.title, podcast_episode_path(@podcast, episode) %></h3>
-      <p>
+      <h3 class="text-xl text-red-700 font-semibold tracking-wide underline"><%= link_to episode.title, podcast_episode_path(@podcast, episode) %></h3>
+      <p class="prose">
         <%= simple_format episode.description %>
       </p>
 
