@@ -11,7 +11,7 @@
     <%= form.text_field :email %>
 
     <%= form.label :bio %>
-    <%= form.text_area :bio %>
+    <%= form.text_area :bio, data: { "controller": "mde" } %>
 
     <%= form.label :avatar, "Avatar URL" %>
     <%= form.stack do %>
