@@ -1,31 +1,34 @@
-<%= turbo_frame_tag dom_id episode do %>
-  <% if episode.errors.any? %>
-    <ul>
-    <% episode.errors.full_messages.each do |msg| %>
-      <li><%= msg %></li>
-    <% end %>
-    </ul>
+<% summary ||= false %>
+
+<% if episode.errors.any? %>
+  <ul>
+  <% episode.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
   <% end %>
+  </ul>
+<% end %>
 
 
-  <%= form_with model: episode, builder: TailwindFormBuilder, url: [podcast, episode] do |form| %>
+<%= form_with model: episode, builder: TailwindFormBuilder, url: [podcast, episode] do |form| %>
+  <%= hidden_field_tag :index %>
 
-    <%= form.grid do %>
-      <%= form.label :name %>
-      <%= form.text_field :name %>
+  <%= form.grid do %>
+    <%= form.label :name %>
+    <%= form.text_field :name %>
 
-      <%= form.label :season %>
-      <%= form.number_field :season %>
+    <%= form.label :season %>
+    <%= form.number_field :season %>
 
-      <%= form.label :number %>
-      <%= form.number_field :number %>
+    <%= form.label :number %>
+    <%= form.number_field :number %>
 
-      <%= form.label :description %>
-      <%= form.text_area :description %>
+    <%= form.label :description %>
+    <%= form.text_area :description %>
 
-      <%= form.label :published %>
-      <%= form.date_field :published %>
+    <%= form.label :published %>
+    <%= form.date_field :published %>
 
+    <% unless summary %>
       <%= form.label :audio, class: "pt-0" %>
       <%= form.hidden_field :audio, value: episode.cached_audio_data %>
       <%= form.file_field :audio %>
@@ -36,18 +39,20 @@
           <%= link_to episode.audio.metadata["filename"], episode.audio_url, class: "text-red-700"  %> (<%= ActiveSupport::Duration.build(episode.audio.metadata["duration"]).inspect %>)
         </div>
       <% end %>
+    <% end%>
 
-      <%= form.check_box :explicit, class: "justify-self-end pt-2" %>
-      <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
+    <%= form.check_box :explicit, class: "justify-self-end pt-2" %>
+    <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
 
+    <% unless summary %>
       <%= form.label :show_notes  %>
       <%= form.text_area :show_notes, data: { "controller": "mde" } %>
-
-      <%= form.actions do %>
-        <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
-        <%= form.cancel podcast_url(podcast) %>
-      <% end %>
     <% end %>
 
+    <%= form.actions do %>
+      <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
+      <%= form.cancel podcast_url(podcast) %>
+    <% end %>
   <% end %>
+
 <% end %>
