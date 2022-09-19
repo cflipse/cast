@@ -1,30 +1,25 @@
-<h1><%= link_to @podcast.name, podcast_url(@podcast) %></h1>
-
-<article class="bg-slate-200 shadow">
-
-  <header class="m-6">
-    <h2 class="text-2xl py-6"><%= @episode.title %></h2>
-
-    <%= image_tag @podcast.image_url if @podcast.image.present? %>
-
-
-    <p>
-      <%= simple_format @episode.description %>
-    </p>
-  </header>
-
-  <div class="flex w-full sticky top-0 bottom-0">
-  <%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
+<article class="bg-slate-200 shadow py-4">
+  <div class="m-6">
+    <%= render PodcastHeaderComponent.new podcast: @podcast %>
   </div>
 
+  <header class="mx-6">
+    <div class="flex flex-row">
+      <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
+
+      <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
+    </div>
+
+    <%= tag.p simple_format @episode.description %>
+  </header>
+
+  <div class="flex w-full sticky top-0 bottom-0 my-6">
+    <%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
+  </div>
+
+  <h3 class="m-6 text-2xl font-bold">Show Notes</h3>
 
   <div class="prose m-6">
     <%= markdown @episode.show_notes %>
   </div>
-
-
-
-  <footer class="m-6">
-    <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
-  </footer>
 </article>
