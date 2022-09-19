@@ -13,7 +13,7 @@ RSpec.describe "RSS Feed" do
 
     expect(page).to have_selector("#episodes article", count: 7)
 
-    click_on "feed"
+    click_on "Feed", visible: :any
     feed = Nokogiri.parse(page.body)
 
     expect(feed.search("item title").count).to eq 7

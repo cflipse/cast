@@ -10,7 +10,7 @@
       <div class="justify-self-end">
         <%= link_to podcast_url(podcast, format: :rss) do %>
           <div class="bg-red-700 text-gray-200 rounded-xl p-3">
-            <%= render "icons/rss" %>
+            <%= render "icons/rss" %><span class="hidden ml-2">Feed</span>
           </div>
         <% end %>
       </div>
