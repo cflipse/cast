@@ -1,30 +1,5 @@
 <article class="bg-slate-200 p-6 shadow-lg">
-  <header class="flex flex-cols pb-4">
-    <h2 class="text-4xl font-bold tracking-wide text-red-700 grow"><%= @podcast.name %></h2>
-
-    <div>
-      [<%= link_to "feed", podcast_url(@podcast, format: :rss) %>]
-    </div>
-
-  </header>
-
-  <div class="flex flex-row gap-8 mb-8">
-    <div>
-      <%= image_tag @podcast.image_url if @podcast.image.present? %>
-    </div>
-
-    <div>
-      <p>
-      <%= simple_format @podcast.description %>
-      </p>
-
-      <% if @podcast.explicit %>
-        <div>
-          <em>warning: Contains explicit content</em>
-        </div>
-      <% end %>
-    </div>
-  </div>
+  <%= render PodcastHeaderComponent.new podcast: @podcast %>
 
   <section id="hosts">
     <ul>

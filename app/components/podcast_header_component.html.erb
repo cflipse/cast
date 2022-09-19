@@ -1,0 +1,24 @@
+<div class="flex flex-row gap-8 mb-8">
+  <%= image_tag podcast.image_url, class: "w-1/3" if podcast.image.present? %>
+
+  <div>
+    <header class="flex flex-cols">
+      <h2 class="text-4xl font-bold tracking-wide text-red-700 grow"><%= link_to podcast.name, podcast_url(podcast) %></h2>
+
+      <div class="justify-self-end">
+        [<%= link_to "feed", podcast_url(podcast, format: :rss) %>]
+      </div>
+    </header>
+
+    <p>
+      <%= simple_format podcast.description %>
+    </p>
+
+    <% if podcast.explicit %>
+      <div>
+        <em>warning: Contains explicit content</em>
+      </div>
+    <% end %>
+  </div>
+</div>
+

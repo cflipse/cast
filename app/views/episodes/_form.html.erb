@@ -1,45 +1,46 @@
-
-<% if episode.errors.any? %>
-  <ul>
-  <% episode.errors.full_messages.each do |msg| %>
-    <li><%= msg %></li>
-  <% end %>
-  </ul>
-<% end %>
-
-
-<%= form_with model: episode, builder: TailwindFormBuilder, url: [podcast, episode] do |form| %>
-
-  <%= form.grid do %>
-    <%= form.label :name %>
-    <%= form.text_field :name %>
-
-    <%= form.label :season %>
-    <%= form.number_field :season %>
-
-    <%= form.label :number %>
-    <%= form.number_field :number %>
-
-    <%= form.label :description %>
-    <%= form.text_area :description %>
-
-    <%= form.label :published %>
-    <%= form.date_field :published %>
-
-    <%= form.label :audio, class: "pt-0" %>
-    <%= form.hidden_field :audio, value: episode.cached_audio_data %>
-    <%= form.file_field :audio %>
-
-    <%= form.check_box :explicit, class: "justify-self-end pt-2" %>
-    <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
-
-    <%= form.label :show_notes  %>
-    <%= form.text_area :show_notes, data: { "controller": "mde" } %>
-
-    <%= form.actions do %>
-      <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
-      <%= form.cancel podcast_url(podcast) %>
+<%= turbo_frame_tag dom_id episode do %>
+  <% if episode.errors.any? %>
+    <ul>
+    <% episode.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
     <% end %>
+    </ul>
   <% end %>
 
+
+  <%= form_with model: episode, builder: TailwindFormBuilder, url: [podcast, episode] do |form| %>
+
+    <%= form.grid do %>
+      <%= form.label :name %>
+      <%= form.text_field :name %>
+
+      <%= form.label :season %>
+      <%= form.number_field :season %>
+
+      <%= form.label :number %>
+      <%= form.number_field :number %>
+
+      <%= form.label :description %>
+      <%= form.text_area :description %>
+
+      <%= form.label :published %>
+      <%= form.date_field :published %>
+
+      <%= form.label :audio, class: "pt-0" %>
+      <%= form.hidden_field :audio, value: episode.cached_audio_data %>
+      <%= form.file_field :audio %>
+
+      <%= form.check_box :explicit, class: "justify-self-end pt-2" %>
+      <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
+
+      <%= form.label :show_notes  %>
+      <%= form.text_area :show_notes, data: { "controller": "mde" } %>
+
+      <%= form.actions do %>
+        <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
+        <%= form.cancel podcast_url(podcast) %>
+      <% end %>
+    <% end %>
+
+  <% end %>
 <% end %>
