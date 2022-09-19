@@ -39,14 +39,14 @@ class ImportFeed
     puts title
 
     # extract name and number from the original compound title
-    if epi.name =~ /^.*Episode: (\d+): (.*)$/
+    if title =~ /^.*Episode (\d+): (.*)$/
       title = $2
       number = $1
     end
 
     podcast.episodes.build(
       name: title,
-      number: number.to_i,
+      number: number,
       description: item.at_xpath("itunes:summary").content,
       show_notes: show_notes(item),
       published: item.at_xpath("pubDate").content,

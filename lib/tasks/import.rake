@@ -7,5 +7,10 @@ namespace :import do
     import.build_episodes(cast)
 
     cast.save!
+  rescue ActiveRecord::RecordInvalid
+    puts cast.errors.full_messages
+    cast.episodes.each do |ep|
+      puts ep.errors.full_messages
+    end
   end
 end
