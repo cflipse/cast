@@ -2,11 +2,15 @@
   <%= image_tag podcast.image_url, class: "w-1/3" if podcast.image.present? %>
 
   <div>
-    <header class="flex flex-cols">
+    <header class="flex flex-cols mb-4">
       <h2 class="text-4xl font-bold tracking-wide text-red-700 grow"><%= link_to podcast.name, podcast_url(podcast) %></h2>
 
       <div class="justify-self-end">
-        [<%= link_to "feed", podcast_url(podcast, format: :rss) %>]
+        <%= link_to podcast_url(podcast, format: :rss) do %>
+          <div class="bg-red-700 text-gray-200 rounded-xl p-3">
+            <%= render "icons/rss" %>
+          </div>
+        <% end %>
       </div>
     </header>
 
