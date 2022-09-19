@@ -1,0 +1,14 @@
+<article class="my-4">
+  <header class="flex flex-cols">
+    <h3 class="text-xl text-red-700 font-semibold tracking-wide underline grow">
+      <%= link_to episode.title, podcast_episode_path(@podcast, episode), data: { "turbo-frame": "_top" } %>
+    </h3>
+
+    <%= link_to "edit", edit_podcast_episode_url(podcast, episode, index: true) %>
+  </header>
+  <p class="prose">
+    <%= simple_format episode.description %>
+  </p>
+
+  <%#= audio_tag episode.audio_url, controls: true, class: "w-full" if episode.audio.present? %>
+</article>
