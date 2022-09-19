@@ -21,7 +21,7 @@ RSpec.feature "Episodes", type: :feature do
     expect(page).to have_content("Episode 4: Defilers are bad, mkay?")
   end
 
-  scenario "Edit an episode" do
+  scenario "Edit an episode from show" do
     episode = create :episode, podcast: podcast
 
     visit podcast_path(podcast)

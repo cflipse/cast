@@ -38,10 +38,20 @@ class EpisodesController < ApplicationController
       .permit(:name, :number, :season, :published, :audio, :description, :show_notes, :explicit)
 
     if @episode.save
-      redirect_to podcast_episode_path(@podcast, @episode),
+      redirect_to return_path,
         notice: "#{@episode.title} has been updated"
     else
       render :edit
+    end
+  end
+
+  private
+
+  def return_path
+    if params[:index].present?
+      podcast_path(@podcast)
+    else
+      podcast_episode_path(@podcast, @episode)
     end
   end
 end
