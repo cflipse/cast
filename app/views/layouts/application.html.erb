@@ -33,9 +33,19 @@
       </header>
 
       <main>
-        <% flash.each do |key, message| -%>
-          <%= tag.div message, class: key %>
-        <% end -%>
+        <% if flash[:notice] %>
+          <div class="notice py-4 px-6 bg-emerald-700 text-gray-200 border-2 border-emerald-800 flex flex-row gap-3">
+            <%= render "icons/check" %>
+            <%= flash[:notice] %>
+          </div>
+        <% end %>
+        <% if flash[:alert] %>
+          <div class="alert py-4 px-6 bg-orange-300  border-2 border-amber-800 flex flex-row gap-3">
+            <%= render "icons/alert" %>
+            <%= flash[:alert] %>
+          </div>
+        <% end %>
+
 
         <%= yield %>
       </main>

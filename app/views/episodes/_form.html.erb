@@ -30,6 +30,13 @@
       <%= form.hidden_field :audio, value: episode.cached_audio_data %>
       <%= form.file_field :audio %>
 
+      <% if episode.audio_data %>
+        <span></span>
+        <div>
+          <%= link_to episode.audio.metadata["filename"], episode.audio_url, class: "text-red-700"  %> (<%= ActiveSupport::Duration.build(episode.audio.metadata["duration"]).inspect %>)
+        </div>
+      <% end %>
+
       <%= form.check_box :explicit, class: "justify-self-end pt-2" %>
       <%= form.label :explicit, "Contains explicit content", class: "justify-self-begin pt-0" %>
 
