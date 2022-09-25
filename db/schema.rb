@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_17_194530) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_25_150733) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
@@ -65,6 +65,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_17_194530) do
     t.string "roles", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "admin", default: false
     t.index ["email"], name: "index_profiles_on_email"
     t.index ["login"], name: "index_profiles_on_login"
     t.index ["persistence_token"], name: "index_profiles_on_persistence_token"
