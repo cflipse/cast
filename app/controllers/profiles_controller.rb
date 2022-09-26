@@ -1,10 +1,12 @@
 class ProfilesController < ApplicationController
+  after_action :verify_authorized
+
   def new
-    @profile = Profile.new
+    @profile = authorize Profile.new
   end
 
   def create
-    @profile = Profile.new params.require(:profile)
+    @profile = authorize Profile.new params.require(:profile)
       .permit(:display_name, :login, :email, :bio, :avatar)
 
     if @profile.save
@@ -16,15 +18,15 @@ class ProfilesController < ApplicationController
   end
 
   def show
-    @profile = Profile.find_by(login: params[:id])
+    @profile = authorize Profile.find_by(login: params[:id])
   end
 
   def edit
-    @profile = Profile.find_by(login: params[:id])
+    @profile = authorize Profile.find_by(login: params[:id])
   end
 
   def update
-    @profile = Profile.find_by(login: params[:id])
+    @profile = authorize Profile.find_by(login: params[:id])
 
     @profile.attributes = params.require(:profile)
       .permit(:display_name, :login, :email, :bio, :avatar)

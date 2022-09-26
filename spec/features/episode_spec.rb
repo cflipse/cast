@@ -4,6 +4,8 @@ RSpec.feature "Episodes", type: :feature do
   let(:podcast) { create :podcast }
 
   scenario "Create a new episode" do
+    login_as FactoryBot.create :profile, roles: [podcast.slug]
+
     visit podcast_path(podcast)
 
     click_on "New Episode"
@@ -22,6 +24,8 @@ RSpec.feature "Episodes", type: :feature do
   end
 
   scenario "Edit an episode from show" do
+    login_as FactoryBot.create :profile, roles: [podcast.slug]
+
     episode = create :episode, podcast: podcast
 
     visit podcast_path(podcast)

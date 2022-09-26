@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe "Podcasts" do
   scenario "Create a new podcast" do
+    login_as FactoryBot.create :profile, :admin
+
     profiles = create_list :profile, 5
 
     visit "/"

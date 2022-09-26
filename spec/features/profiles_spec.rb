@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe "Profiles" do
   scenario "create a new profile" do
+    login_as FactoryBot.create :profile, :admin
+
     visit "/"
 
     click_on "New Profile"
@@ -23,8 +25,13 @@ RSpec.describe "Profiles" do
   scenario "Editing profiles" do
     profile = create :profile
 
+    login_as profile
+
     visit "/"
-    click_on profile.display_name
+
+    within "main" do
+      click_on profile.display_name
+    end
 
     click_on "Edit Profile"
 

@@ -13,6 +13,6 @@
 <hr />
 
 <div class="my-4">
-  <%= link_to "New Podcast", new_podcast_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" %>
-  <%= link_to "New Profile", new_profile_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" %>
+  <%= link_to "New Podcast", new_podcast_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" if policy(:podcast).create? %>
+  <%= link_to "New Profile", new_profile_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" if policy(:profile).create? %>
 </div>

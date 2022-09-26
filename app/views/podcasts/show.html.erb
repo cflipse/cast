@@ -17,6 +17,6 @@
   <% end %>
 
   <footer>
-    <%= link_to "New Episode", new_podcast_episode_path(@podcast) %>
+    <%= link_to "New Episode", new_podcast_episode_path(@podcast) if policy(@podcast.episodes.build).new? %>
   </footer>
 </section>

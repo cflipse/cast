@@ -1,15 +1,17 @@
 class PodcastsController < ApplicationController
+  after_action :verify_authorized
+
   def index
-    @podcasts = Podcast.all
-    @profiles = Profile.all
+    @podcasts = authorize Podcast.all
+    @profiles = authorize Profile.all
   end
 
   def new
-    @podcast = Podcast.new
+    @podcast = authorize Podcast.new
   end
 
   def create
-    @podcast = Podcast.new params.require(:podcast)
+    @podcast = authorize Podcast.new params.require(:podcast)
       .permit(:name, :description, :explicit, :image, :slug, host_ids: [])
 
     @podcast.generate_slug
@@ -22,6 +24,6 @@ class PodcastsController < ApplicationController
   end
 
   def show
-    @podcast = Podcast.find_by(slug: params[:id])
+    @podcast = authorize Podcast.find_by(slug: params[:id])
   end
 end
