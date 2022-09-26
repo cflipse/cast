@@ -22,13 +22,15 @@
   <body class="bg-[#dec897]">
     <section class="container mx-auto py-12 px-6 grid grid-rows-[fit-content(3rem)_2fr_fit-content(2rem)] h-screen">
 
-      <header class="pb-8">
+      <header class="pb-8" id="heading">
         <h1 class="text-5xl font-bold"><%= link_to "casts.athas.org", root_path %></h1>
 
         <nav class="flex flex-row gap-4">
           <%= link_to "burnt world of athas", bwoa_url, class: "hover:text-red-700", data: { turbo: false } %>
           <%= link_to "arena", arena_url, class: "hover:text-red-700", data: { turbo: false } %>
           <%= link_to "podcasts", root_url, class: "hover:text-red-700" %>
+
+          <%= tag.span current_profile&.display_name %>
         </nav>
       </header>
 
