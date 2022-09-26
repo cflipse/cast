@@ -9,11 +9,11 @@ class ApplicationPolicy
   end
 
   def index?
-    false
+    true
   end
 
   def show?
-    false
+    true
   end
 
   def create?
@@ -34,6 +34,16 @@ class ApplicationPolicy
 
   def destroy?
     false
+  end
+
+  protected
+
+  def admin?
+    user&.admin?
+  end
+
+  def roles
+    user&.roles || []
   end
 
   class Scope
