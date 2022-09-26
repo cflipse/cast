@@ -20,5 +20,19 @@ RSpec.describe "Authorizing as an admin", type: :feature do
         expect(page).to have_content(profile.display_name)
       end
     end
+
+    it "lets you log out" do
+      fake_google_auth Faker::Omniauth.google email: profile.email
+
+      visit "/login"
+      click_on "Google"
+
+      within "#heading" do
+        click_on "Log out"
+      end
+
+      expect(page).to have_content("logged out")
+        .and have_no_content(profile.display_name)
+    end
   end
 end

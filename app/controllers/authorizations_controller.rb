@@ -13,4 +13,10 @@ class AuthorizationsController < ApplicationController
       redirect_to root_path, alert: "Unknown user #{email}"
     end
   end
+
+  def destroy
+    session[:current_profile_id] = nil
+    redirect_back_or_to root_path,
+      notice: "logged out"
+  end
 end
