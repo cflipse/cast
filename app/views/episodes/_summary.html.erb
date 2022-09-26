@@ -4,7 +4,7 @@
       <%= link_to episode.title, podcast_episode_path(@podcast, episode), data: { "turbo-frame": "_top" } %>
     </h3>
 
-    <%= link_to "edit", edit_podcast_episode_url(podcast, episode, index: true) %>
+    <%= link_to "edit", edit_podcast_episode_url(podcast, episode, index: true) if policy(episode).edit? %>
   </header>
   <p class="prose">
     <%= simple_format episode.description %>

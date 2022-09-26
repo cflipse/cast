@@ -7,7 +7,7 @@
     <div class="flex flex-row">
       <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
 
-      <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) %>
+      <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) if policy(@episode).edit? %>
     </div>
 
     <%= tag.p simple_format @episode.description %>
