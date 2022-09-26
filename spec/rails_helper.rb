@@ -44,6 +44,9 @@ RSpec.configure do |config|
 
   config.include FactoryBot::Syntax::Methods
 
+  config.include Support::OmniAuthSupport, type: :feature
+  config.include Support::OmniAuthSupport, type: :request
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
@@ -66,4 +69,12 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+
+  config.before(:suite) do
+    OmniAuth.config.test_mode = true
+  end
+
+  config.after do
+    OmniAuth.config.mock_auth = {}
+  end
 end

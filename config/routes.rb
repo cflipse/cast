@@ -5,6 +5,10 @@ Rails.application.routes.draw do
   # root "articles#index"
   root "podcasts#index"
 
+  match "/auth/:provider/callback", to: "authorizations#create", via: %i[post get]
+  get "/login", to: "authorizations#new", as: "login"
+  get "/logout", to: "authorizations#destroy", as: "logout"
+
   resources :profiles
 
   resources :podcasts do

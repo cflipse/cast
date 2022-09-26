@@ -196,6 +196,9 @@ GEM
     omniauth-oauth2 (1.7.3)
       oauth2 (>= 1.4, < 3)
       omniauth (>= 1.9, < 3)
+    omniauth-rails_csrf_protection (1.0.1)
+      actionpack (>= 4.2)
+      omniauth (~> 2.0)
     paper_trail (13.0.0)
       activerecord (>= 5.2)
       request_store (~> 1.1)
@@ -362,6 +365,7 @@ DEPENDENCIES
   launchy
   omniauth
   omniauth-google-oauth2
+  omniauth-rails_csrf_protection
   paper_trail
   paper_trail-globalid
   pg
