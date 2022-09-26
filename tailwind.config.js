@@ -12,7 +12,7 @@ module.exports = {
     extend: {
       gridTemplateRows: {
         'form': "fit-content(15rem) minmax(20rem, 1fr)",
-      }
+      },
     },
   },
   plugins: [

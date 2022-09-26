@@ -9,6 +9,9 @@
     @apply  text-3xl;
   }
 
+  .background-image-ds-logo {
+    background: url('~/images/ds_logo_crop.png') no-repeat right bottom;
+  }
 
   div.field_with_errors {
     label {
