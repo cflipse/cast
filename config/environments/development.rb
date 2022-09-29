@@ -11,6 +11,16 @@ Rails.application.configure do
   # Do not eager load code on boot.
   config.eager_load = false
 
+  # allow non-localhost hosts
+  Rails.application.config.hosts = [
+    "localhost",
+    "dev.athas.org"
+  ]
+
+  config.web_console.permissions = Socket.ip_address_list.reduce([]) do |res, addrinfo|
+    addrinfo.ipv4? ? res << IPAddr.new(addrinfo.ip_address).mask(24) : res
+  end
+
   # Show full error reports.
   config.consider_all_requests_local = true
 

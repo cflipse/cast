@@ -6,7 +6,10 @@ threads min_threads_count, max_threads_count
 
 worker_timeout 3600
 
-ssl_bind "0.0.0.0", ENV.fetch("PORT", 8090)
+ssl_bind "0.0.0.0", ENV.fetch("PORT", 8090), {
+  cert: ENV.fetch("SSL_CERT_FILE"),
+  key: ENV.fetch("SSL_KEY_FILE"),
+}
 
 pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 
