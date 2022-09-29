@@ -148,6 +148,7 @@ GEM
       rexml
     launchy (2.5.0)
       addressable (~> 2.7)
+    localhost (1.1.9)
     loofah (2.18.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -363,6 +364,7 @@ DEPENDENCIES
   jbuilder
   kramdown
   launchy
+  localhost
   omniauth
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
