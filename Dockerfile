@@ -14,6 +14,7 @@ RUN apk add --no-cache \
   openssh-client \
   postgresql-dev \
   tzdata \
+  taglib-dev \
   rsync
 
 ENV BUNDLE_JOBS=4
@@ -23,4 +24,4 @@ ENV GEM_HOME=/usr/local/bundle
 
 RUN gem install --default bundler:"~> 2.3" && npm install -g npm@7.24
 
-WORKDIR /srv/casts
+WORKDIR /srv/cast
