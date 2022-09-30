@@ -11,10 +11,6 @@ export default defineConfig({
   ],
   server: {
     "port": 3046,
-    "https": true,
-    "hmr": {
-      "protocol": "wss",
-      "host": "dev.athas.org",
-    }
+    "hmr": true,
   }
 })
