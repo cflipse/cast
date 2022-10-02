@@ -6,6 +6,9 @@ threads min_threads_count, max_threads_count
 
 worker_timeout 3600
 
+bind "tcp://0.0.0.0:#{ENV.fetch("port", 6700)}"
+bind "unix:///tmp/puma-bwoa.sock"
+
 # # can't seem to get vite to work with ssl at the moment
 # ssl_bind "0.0.0.0", ENV.fetch("PORT", 8090), {
 #   cert: ENV.fetch("SSL_CERT_FILE"),
