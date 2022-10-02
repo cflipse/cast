@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_25_150733) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_02_131603) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
@@ -18,7 +18,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_25_150733) do
   enable_extension "plpgsql"
 
   create_table "episodes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name"
+    t.citext "name"
     t.integer "number"
     t.integer "season"
     t.text "description"
@@ -36,7 +36,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_25_150733) do
   create_table "podcast_hosts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "profile_id", null: false
     t.uuid "podcast_id", null: false
-    t.string "state"
+    t.citext "state"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["podcast_id"], name: "index_podcast_hosts_on_podcast_id"
@@ -44,7 +44,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_25_150733) do
   end
 
   create_table "podcasts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.citext "slug", null: false
     t.text "description"
     t.boolean "explicit", null: false
