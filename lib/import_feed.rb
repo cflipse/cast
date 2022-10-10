@@ -20,7 +20,7 @@ class ImportFeed
     Podcast.new(
       opts.reverse_merge(
         name: channel.at_xpath("title").content,
-        description: channel.at_xpath("itunes:summary").gsub(/<br .*$/m, ""),
+        description: channel.at_xpath("itunes:summary").content.gsub(/<br .*$/m, ""),
         updated_at: channel.at_xpath("lastBuildDate").content,
         image_remote_url: channel.at_xpath("itunes:image")["href"],
         explicit: channel.at_xpath("itunes:explicit").content == "yes"
