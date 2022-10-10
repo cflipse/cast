@@ -9,7 +9,7 @@ class ImportFeed
   end
 
   def feed
-    @feed ||= Nokogiri::XML URI.open(@url)
+    @feed ||= Nokogiri::XML URI.open(@url) # rubocop:disable Security/Open
   end
 
   def channel
