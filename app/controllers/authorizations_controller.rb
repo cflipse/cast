@@ -1,4 +1,6 @@
 class AuthorizationsController < ApplicationController
+  protect_from_forgery except: :create
+
   def create
     email = request.env.dig("omniauth.auth", "info", "email")
     profile = Profile.find_by(email: email)
@@ -6,9 +8,8 @@ class AuthorizationsController < ApplicationController
     if profile
       session[:current_profile_id] = profile.id
 
-      redirect_to url_from(request.env["omniauth.origin"]) || root_path,
-        notice: "Welcome #{profile.display_name}",
-        fallback_url: root_path
+      redirect_to root_path,
+        notice: "Welcome #{profile.display_name}"
     else
       redirect_to root_path, alert: "Unknown user #{email}"
     end
