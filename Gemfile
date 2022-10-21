@@ -77,6 +77,16 @@ group :test do
   gem "launchy"
 end
 
+group :deployment do
+  gem "capistrano3-puma", require: false
+  gem "capistrano-bundler", require: false
+  gem "capistrano-chruby", require: false
+  gem "capistrano-deploytags", require: false
+  gem "capistrano-local-precompile", require: false
+  gem "capistrano-rails", require: false
+  gem "capistrano-sentry", require: false
+end
+
 group :development, :test do
   gem "factory_bot_rails", require: false
   gem "faker"
