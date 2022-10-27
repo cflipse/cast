@@ -19,8 +19,8 @@
 # role :web, %w{user1@primary.com user2@additional.com}, other_property: :other_value
 # role :db,  %w{deploy@example.com}
 
-role :app, %w[nibenay.athas.org]
-role :web, %w[nibenay.athas.org]
+role :app, %w[bwoa@waverly.athas.org]
+role :web, %w[bwoa@waverly.athas.org]
 
 set :chruby_ruby, "3.1.2"
 append :linked_files, "config/credentials/production.key"
@@ -43,11 +43,11 @@ set :puma_env, "production"
 #
 # Global options
 # --------------
-#  set :ssh_options, {
-#    keys: %w(/home/user_name/.ssh/id_rsa),
-#    forward_agent: false,
-#    auth_methods: %w(password)
-#  }
+set :ssh_options, {
+  forward_agent: true
+  # auth_methods: %w(password)
+  # keys: %w(/home/user_name/.ssh/id_rsa),
+}
 #
 # The server-based syntax can be used to override options:
 # ------------------------------------
