@@ -1,6 +1,7 @@
 <article class="shadow-lg p-6 bg-slate-200">
   <%= render PodcastHeaderComponent.new podcast: podcast %>
 
+  <% if latest %>
   <section>
     <h3 class="text-2xl mb-2">latest episode: <%= tag.span latest.name, class: "text-red-700" %></h3>
     <%= latest.description %>
@@ -10,4 +11,5 @@
         class: "p-3 bg-red-700 shadow text-gray-200 rounded-md" %>
     </div>
   </section>
+  <% end %>
 </article>

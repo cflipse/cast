@@ -32,7 +32,9 @@ RSpec.describe "Authorizing as an admin", type: :feature do
       end
 
       expect(page).to have_content("logged out")
-        .and have_no_content(profile.display_name)
+      within("#heading") do
+        expect(page).to have_no_content(profile.display_name)
+      end
     end
   end
 end
