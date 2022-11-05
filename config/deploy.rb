@@ -8,7 +8,7 @@ set :repo_url, "git@github.com:cflipse/bwoa.git"
 set :repo_tree, "cast"
 
 # Default branch is :master
-# ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
+ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
 
 # Default deploy_to directory is /var/www/my_app_name
 set :deploy_to, "/srv/www/cast"
