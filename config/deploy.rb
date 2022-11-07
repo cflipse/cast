@@ -42,6 +42,8 @@ append :linked_dirs, "log", "tmp/pids"
 # Uncomment the following to require manually verifying the host key before first deploy.
 # set :ssh_options, verify_host_key: :secure
 
+set :assets_dir, "public/vite"
+
 set :puma_preload_app, true
 set :puma_init_activerecord, true
 set :puma_systemctl_user, "bwoa"
@@ -53,4 +55,5 @@ set :puma_workers, 2
 set :puma_threads, [0, 8]
 set :puma_service_unit_env_vars, %w[
   RAILS_MAX_THREADS=8
+  RAILS_SERVE_STATIC_FILES=true
 ]
