@@ -53,6 +53,8 @@ set :puma_phased_restart, true
 set :puma_bind, "tcp://0.0.0.0:6700"
 set :puma_workers, 2
 
+set :nginx_use_ssl, true
+
 set :puma_threads, [0, 8]
 set :puma_service_unit_env_vars, %w[
   RAILS_MAX_THREADS=8
