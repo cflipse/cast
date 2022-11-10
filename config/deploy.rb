@@ -48,6 +48,7 @@ set :puma_preload_app, true
 set :puma_init_activerecord, true
 set :puma_systemctl_user, "bwoa"
 set :puma_systemd_service_unit_name, "cast-puma"
+set :puma_enable_lingering, true
 set :puma_phased_restart, true
 set :puma_bind, "tcp://0.0.0.0:6700"
 set :puma_workers, 2
