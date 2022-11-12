@@ -74,6 +74,10 @@ RSpec.configure do |config|
     OmniAuth.config.test_mode = true
   end
 
+  config.before(js: true) do
+    Capybara.current_driver = :selenium_headless
+  end
+
   config.after do
     OmniAuth.config.mock_auth = {}
   end
