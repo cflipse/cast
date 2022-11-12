@@ -26,7 +26,7 @@ RSpec.feature "Episodes", type: :feature do
   scenario "Edit an episode from show" do
     login_as FactoryBot.create :profile, roles: [podcast.slug]
 
-    episode = create :episode, podcast: podcast
+    episode = create :episode, :published, podcast: podcast
 
     visit podcast_path(podcast)
     click_on episode.title
@@ -44,5 +44,21 @@ RSpec.feature "Episodes", type: :feature do
 
     expect(page).to have_content("Episode 1: #{episode.name}")
       .and have_content(lorem)
+  end
+
+  scenario "Delete an episode", js: true do
+    login_as FactoryBot.create :profile, roles: [podcast.slug]
+
+    episode = create :episode, :published, podcast: podcast
+
+    visit podcast_path(podcast)
+    click_on episode.title
+
+    click_on "Delete Episode"
+    accept_confirm
+
+    within "main" do
+      expect(page).not_to have_content(episode.name)
+    end
   end
 end

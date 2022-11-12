@@ -8,6 +8,9 @@
       <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
 
       <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) if policy(@episode).edit? %>
+      <%= button_to "Delete Episode", podcast_episode_path(@podcast, @episode),
+        method: :delete,
+        form: { data: { "turbo-confirm": "A you sure you want to remove this episode?" } } if policy(@episode).destroy? %>
     </div>
 
     <%= tag.p simple_format @episode.description %>

@@ -47,6 +47,15 @@ class EpisodesController < ApplicationController
     end
   end
 
+  def destroy
+    @episode = authorize @podcast.episodes.find(params[:id])
+
+    @episode.update(deleted_at: Time.current)
+
+    redirect_to podcast_path(@podcast),
+      notice: "#{@episode.title} has been removed"
+  end
+
   private
 
   def return_path

@@ -39,7 +39,7 @@
         </nav>
       </header>
 
-      <main>
+      <aside>
         <% if flash[:notice] %>
           <div class="notice py-4 px-6 bg-emerald-700 text-gray-200 border-2 border-emerald-800 flex flex-row gap-3">
             <%= render "icons/check" %>
@@ -52,9 +52,10 @@
             <%= flash[:alert] %>
           </div>
         <% end %>
+      </aside>
 
-
-        <%= yield %>
+      <main>
+        <%= yield%>
       </main>
     </section>
   </body>
