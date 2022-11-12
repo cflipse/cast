@@ -5,7 +5,7 @@ RSpec.describe "RSS Feed" do
   let(:hosts) { create_list :profile, 2 }
 
   it "provides a list of all episodes" do
-    create_list :episode, 7, podcast: podcast
+    create_list :episode, 7, :published, podcast: podcast
 
     visit "/"
 

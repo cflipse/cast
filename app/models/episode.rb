@@ -10,6 +10,8 @@ class Episode < ApplicationRecord
 
   delegate :duration, to: :audio
 
+  scope :published, -> { where(deleted_at: nil).and where.not(published: nil) }
+
   def title
     if number
       "Episode #{number}: #{name}"
