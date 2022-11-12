@@ -20,6 +20,7 @@
 # role :db,  %w{deploy@example.com}
 
 role :app, %w[bwoa@waverly.athas.org]
+role :db, %w[bwoa@waverly.athas.org]
 role :web, %w[bwoa@waverly.athas.org]
 
 set :chruby_ruby, "3.1.2"
