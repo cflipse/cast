@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_02_131603) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_12_170101) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
@@ -29,6 +29,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_02_131603) do
     t.datetime "published", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deleted_at", precision: nil
     t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
     t.index ["published"], name: "index_episodes_on_published"
   end
