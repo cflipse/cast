@@ -1,0 +1,11 @@
+<div class="flex flex-row">
+  <%= link_to edit_podcast_episode_path(podcast, episode), class: edit_classes do %>
+    <%= render "icons/pencil" %> Edit Episode
+  <% end if edit? %>
+
+  <%= button_to podcast_episode_path(podcast, episode),
+    method: :delete, class: delete_classes,
+    form: delete_form_attributes do %>
+    <%= render "icons/trash" %> Delete Episode
+  <% end if destroy? %>
+</div>
