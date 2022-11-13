@@ -10,7 +10,7 @@
 
 
 <%= form_with model: episode, builder: TailwindFormBuilder, url: [podcast, episode] do |form| %>
-  <%= hidden_field_tag :index %>
+  <%= hidden_field_tag :index, params[:index] %>
 
   <%= form.grid do %>
     <%= form.label :name %>
@@ -23,7 +23,7 @@
     <%= form.number_field :number %>
 
     <%= form.label :description %>
-    <%= form.text_area :description %>
+    <%= form.text_area :description, rows: 4 %>
 
     <%= form.label :published %>
     <%= form.date_field :published %>
@@ -51,7 +51,7 @@
 
     <%= form.actions do %>
       <%= form.submit class: "bg-stone-500 p-4 rounded-md font-bold"  %>
-      <%= form.cancel podcast_url(podcast) %>
+      <%= form.cancel (params[:index].present? || episode.new_record?) ? podcast_path(podcast) : podcast_episode_path(podcast, episode) %>
     <% end %>
   <% end %>
 

@@ -1,1 +1,3 @@
-<%= render "form", podcast: @podcast, episode: @episode, summary: params[:index] %>
+<%= turbo_frame_tag @episode do %>
+  <%= render "form", podcast: @podcast, episode: @episode, summary: params[:index] %>
+<% end %>

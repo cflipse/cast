@@ -3,26 +3,28 @@
     <%= render PodcastHeaderComponent.new podcast: @podcast %>
   </div>
 
-  <header class="mx-6">
-    <div class="flex flex-row">
-      <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
+  <%= turbo_frame_tag @episode do %>
+    <header class="mx-6">
+      <div class="flex flex-row">
+        <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
 
-      <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) if policy(@episode).edit? %>
-      <%= button_to "Delete Episode", podcast_episode_path(@podcast, @episode),
-        method: :delete,
-        form: { data: { "turbo-confirm": "A you sure you want to remove this episode?" } } if policy(@episode).destroy? %>
+        <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) if policy(@episode).edit? %>
+        <%= button_to "Delete Episode", podcast_episode_path(@podcast, @episode),
+          method: :delete,
+          form: { data: { "turbo-confirm": "A you sure you want to remove this episode?" } } if policy(@episode).destroy? %>
+      </div>
+
+      <%= tag.p simple_format @episode.description %>
+    </header>
+
+    <div class="flex w-full sticky top-0 bottom-0 my-6">
+      <%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
     </div>
 
-    <%= tag.p simple_format @episode.description %>
-  </header>
+    <h3 class="m-6 text-2xl font-bold">Show Notes</h3>
 
-  <div class="flex w-full sticky top-0 bottom-0 my-6">
-    <%= audio_tag @episode.audio_url, controls: true, class: "grow" if @episode.audio.present? %>
-  </div>
-
-  <h3 class="m-6 text-2xl font-bold">Show Notes</h3>
-
-  <div class="prose m-6" data-turbo="false">
-    <%= markdown @episode.show_notes %>
-  </div>
+    <div class="prose m-6" data-turbo="false">
+      <%= markdown @episode.show_notes %>
+    </div>
+  <% end %>
 </article>

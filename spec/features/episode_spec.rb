@@ -57,8 +57,6 @@ RSpec.feature "Episodes", type: :feature do
     click_on "Delete Episode"
     accept_confirm
 
-    within "main" do
-      expect(page).not_to have_content(episode.name)
-    end
+    expect(page).not_to have_selector("main", text: episode.name)
   end
 end
