@@ -13,20 +13,27 @@ xml.rss version: "2.0", "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.
 
     xml.description @podcast.description
     xml.category "Games &amp; Hobbies"
+    xml.tag! "itunes:category", "Games &amp; Hobbies"
+
     xml.language "en-us"
     xml.lastBuildDate @podcast.updated_at
 
-    xml.tag! "itunes:new-feed-url", podcast_episodes_url(@podcast, format: :rss)
+    xml.tag! "itunes:new-feed-url", podcast_url(@podcast, format: :rss)
+    xml.tag! "itunes:explicit", @podcast.explicit?
+    xml.tag! "itunes:summary", @podcast.description
 
     @podcast.episodes.published.each do |episode|
       xml.item do
         xml.title episode.title
         xml.description episode.description
+        xml.tag! "itunes:summary", episode.description
         xml.pubDate episode.published
+        xml.link podcast_episode_url(@podcast, episode)
 
         xml.guid episode.id
 
         xml.tag! "itunes:duration", episode.duration
+        xml.tag! "itunes:explicit", episode.explicit?
 
         xml.enclosure url: episode.audio_url, type: episode.audio.mime_type, length: episode.audio.size
       end
