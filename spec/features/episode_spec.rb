@@ -59,4 +59,14 @@ RSpec.feature "Episodes", type: :feature do
 
     expect(page).not_to have_selector("main", text: episode.name)
   end
+
+  scenario "guests can view an episode", js: true do
+    episode = create :episode, :published, podcast: podcast
+
+    visit "/"
+    click_on podcast.name
+    click_on episode.title
+
+    expect(page).to have_selector("audio[src='#{episode.audio_url}']")
+  end
 end

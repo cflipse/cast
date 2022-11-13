@@ -11,7 +11,7 @@ class EpisodeAdminComponent < ApplicationComponent
   delegate :edit?, :destroy?, to: :policy
 
   def render?
-    edit? || detroy?
+    edit? || destroy?
   end
 
   def delete_classes
