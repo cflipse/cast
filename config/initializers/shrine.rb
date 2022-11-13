@@ -29,4 +29,4 @@ Shrine.plugin :type_predicates
 Shrine.plugin :validation
 Shrine.plugin :validation_helpers
 
-Shrine.plugin :url_options, store: {public: true, host: ENV["SPACES_HOST"]} if ENV["SPACES_HOST"].present?
+Shrine.plugin :url_options, store: {public: true, host: ENV["SPACES_HOST"]}
