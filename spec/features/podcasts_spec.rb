@@ -31,4 +31,21 @@ RSpec.describe "Podcasts" do
       expect(page).to have_content(profiles[2].display_name)
     end
   end
+
+  scenario "Edit an existing podcast" do
+    login_as FactoryBot.create :profile, :admin
+
+    FactoryBot.create :podcast, name: "Adventures in the Wastes",
+      slug: "wastes"
+
+    visit "/"
+    click_on "Adventures in the Wastes"
+
+    click_on "edit"
+
+    fill_in "Description", with: "Even the plants want to kill you"
+    click_on "Update Podcast"
+
+    expect(page).to have_content "Even the plants want to kill you"
+  end
 end

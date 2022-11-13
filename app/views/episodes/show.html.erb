@@ -1,6 +1,6 @@
 <article class="bg-slate-200 shadow py-4">
   <div class="m-6">
-    <%= render PodcastHeaderComponent.new podcast: @podcast %>
+    <%= render PodcastHeaderComponent.new @podcast, policy: policy(@podcast) %>
   </div>
 
   <%= turbo_frame_tag @episode do %>

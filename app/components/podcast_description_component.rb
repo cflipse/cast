@@ -10,4 +10,8 @@ class PodcastDescriptionComponent < ApplicationComponent
     @podcast = podcast
     @latest = podcast.episodes.first
   end
+
+  def policy
+    helpers.policy(@podcast)
+  end
 end

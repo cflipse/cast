@@ -25,6 +25,10 @@
         <em>warning: Contains explicit content</em>
       </div>
     <% end %>
+
+    <%= link_to edit_podcast_url(podcast), class: "bg-amber-700 text-gray-300 p-3 rounded-md" do %>
+      <%= render "icons/pencil" %> edit
+    <% end if edit? %>
   </div>
 </div>
 

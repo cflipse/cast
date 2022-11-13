@@ -1,7 +1,10 @@
 class PodcastHeaderComponent < ApplicationComponent
-  def initialize podcast:
-    @podcast = podcast
-  end
+  extend Dry::Initializer
+
+  param :podcast
+  option :policy
 
   attr_reader :podcast
+
+  delegate :edit?, to: :policy
 end
