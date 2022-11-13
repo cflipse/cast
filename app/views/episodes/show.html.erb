@@ -8,10 +8,21 @@
       <div class="flex flex-row">
         <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
 
-        <%= link_to "Edit Episode", edit_podcast_episode_path(@podcast, @episode) if policy(@episode).edit? %>
-        <%= button_to "Delete Episode", podcast_episode_path(@podcast, @episode),
-          method: :delete,
-          form: { data: { "turbo-confirm": "A you sure you want to remove this episode?" } } if policy(@episode).destroy? %>
+        <div class="self-center">
+          <div class="flex flex-row">
+            <%= link_to edit_podcast_episode_path(@podcast, @episode),
+              class:  "bg-amber-700 p-2 text-gray-300 rounded-l-md"  do  %>
+              <%= render "icons/pencil" %> Edit Episode
+            <% end if policy(@episode).edit? %>
+
+            <%= button_to podcast_episode_path(@podcast, @episode),
+              method: :delete,
+              class: "bg-red-700 text-gray-300 p-2 rounded-r-md",
+              form: { class: "inline-block", data: { "turbo-confirm": "A you sure you want to remove this episode?" } } do %>
+              <%= render "icons/trash" %> Delete Episode
+            <% end if policy(@episode).destroy? %>
+            </div>
+        </div>
       </div>
 
       <%= tag.p simple_format @episode.description %>
