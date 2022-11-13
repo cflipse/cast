@@ -69,6 +69,8 @@ gem "vite_rails"
 
 gem "turbo-rails"
 
+gem "dry-initializer"
+
 group :test do
   gem "rspec-rails"
   gem "capybara"
