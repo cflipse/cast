@@ -28,6 +28,7 @@ RSpec.describe "Profiles" do
     login_as profile
 
     visit "/"
+    click_on "profiles"
 
     within "main" do
       click_on profile.display_name

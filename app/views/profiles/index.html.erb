@@ -1,4 +1,12 @@
-<%= render PodcastDescriptionComponent.with_collection @podcasts %>
+<header>
+  <h2 class="text-4xl">Profiles</h2>
+</header>
+
+<ul class="list-disc">
+  <% @profiles.each do |profile| %>
+    <li><%= link_to profile.display_name, profile_path(profile) %></li>
+  <% end %>
+</ul>
 
 <div class="my-4">
   <%= link_to "New Podcast", new_podcast_url, class: "p-4 rounded-md bg-amber-600 text-gray-300" if policy(:podcast).create? %>

@@ -1,6 +1,10 @@
 class ProfilesController < ApplicationController
   after_action :verify_authorized
 
+  def index
+    @profiles = authorize Profile.all
+  end
+
   def new
     @profile = authorize Profile.new
   end

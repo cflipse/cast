@@ -3,7 +3,6 @@ class PodcastsController < ApplicationController
 
   def index
     @podcasts = authorize Podcast.all
-    @profiles = authorize Profile.all
   end
 
   def new
