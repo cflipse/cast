@@ -16,9 +16,7 @@
       </div>
     </header>
 
-    <p>
-      <%= simple_format podcast.description %>
-    </p>
+    <%= simple_format podcast.description %>
 
     <% if podcast.explicit %>
       <div>
@@ -26,9 +24,13 @@
       </div>
     <% end %>
 
-    <%= link_to edit_podcast_url(podcast), class: "bg-amber-700 text-gray-300 p-3 rounded-md" do %>
-      <%= render "icons/pencil" %> edit
-    <% end if edit? %>
+    <% if edit? %>
+    <div class="mt-4">
+      <%= link_to edit_podcast_url(podcast), class: "bg-amber-700 text-gray-300 p-3 rounded-md" do %>
+        <%= render "icons/pencil" %> edit
+      <% end %>
+    </div>
+    <% end %>
   </div>
 </div>
 
