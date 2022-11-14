@@ -10,13 +10,19 @@
     <%= form.label :email %>
     <%= form.text_field :email %>
 
+    <%= form.label :roles, "may admin" %>
+    <div>
+      <%= form.collection_check_boxes :roles, Podcast.all, :slug, :name,
+        help: "Which podcasts this profile may manage" %>
+    </div>
+
     <%= form.label :bio %>
     <%= form.text_area :bio, data: { "controller": "mde" } %>
 
     <%= form.label :avatar, "Avatar URL" %>
     <%= form.stack do %>
       <%= form.text_field :avatar %>
-      <em>Will default to gravater if not given</em>
+      <em>Will default to gravatar if not given</em>
     <% end %>
 
     <%= form.actions do %>
