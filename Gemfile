@@ -71,6 +71,9 @@ gem "turbo-rails"
 
 gem "dry-initializer"
 
+gem "sentry-ruby"
+gem "sentry-rails"
+
 group :test do
   gem "rspec-rails"
   gem "capybara"
