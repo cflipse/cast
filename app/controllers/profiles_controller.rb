@@ -11,7 +11,7 @@ class ProfilesController < ApplicationController
 
   def create
     @profile = authorize Profile.new params.require(:profile)
-      .permit(:display_name, :login, :email, :bio, :avatar)
+      .permit(:display_name, :login, :email, :bio, :avatar, roles: [])
 
     if @profile.save
       redirect_to profile_path(@profile),
@@ -33,7 +33,7 @@ class ProfilesController < ApplicationController
     @profile = authorize Profile.find_by(login: params[:id])
 
     @profile.attributes = params.require(:profile)
-      .permit(:display_name, :login, :email, :bio, :avatar)
+      .permit(:display_name, :login, :email, :bio, :avatar, roles: [])
 
     if @profile.save
       redirect_to profile_path(@profile),
