@@ -15,4 +15,4 @@ test:
 
 production:
   <<: *default
-  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>/casts_production
+  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>
