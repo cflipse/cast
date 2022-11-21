@@ -5,6 +5,7 @@ default: &default
 development:
   <<: *default
   url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>/casts_development
+  prepared_statements: false
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -12,7 +13,9 @@ development:
 test:
   <<: *default
   url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>/casts_test
+  prepared_statements: false
 
 production:
   <<: *default
   url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>
+  prepared_statements: false
