@@ -41,7 +41,7 @@ RSpec.describe "Podcasts" do
     visit "/"
     click_on "Adventures in the Wastes"
 
-    click_on "edit"
+    click_on "Edit Description"
 
     fill_in "Description", with: "Even the plants want to kill you"
     click_on "Update Podcast"

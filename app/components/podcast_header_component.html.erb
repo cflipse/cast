@@ -27,10 +27,14 @@
     <% if edit? %>
     <div class="mt-4">
       <%= link_to edit_podcast_url(podcast), class: "bg-amber-700 text-gray-300 p-3 rounded-md" do %>
-        <%= render "icons/pencil" %> edit
+        <%= render "icons/pencil" %> Edit Description
       <% end %>
     </div>
     <% end %>
+
+    <%= link_to "New Episode", new_podcast_episode_path(@podcast),
+      class: "bg-amber-700 p-4 text-gray-300 rounded-md font-bold" if helpers.policy(podcast.episodes.build).new? %>
+
   </div>
 </div>
 
