@@ -4,7 +4,7 @@
       <%= link_to episode.title, podcast_episode_path(@podcast, episode), data: { "turbo-frame": "_top" } %>
     </h3>
 
-    <%= link_to render("icons/pencil"), edit_podcast_episode_url(podcast, episode, index: true) if policy(episode).edit? %>
+    <%= link_to icon("pencil-fill"), edit_podcast_episode_url(podcast, episode, index: true) if policy(episode).edit? %>
   </header>
   <p class="prose">
     <%= simple_format episode.description %>

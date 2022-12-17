@@ -5,4 +5,10 @@ module ApplicationHelper
       .to_html
       .html_safe
   end
+
+  def icon(name, **args)
+    css = args.delete(:class)
+    css = ["bi-#{name}", css].compact.join
+    tag.i(class: css, **args)
+  end
 end

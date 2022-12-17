@@ -10,7 +10,7 @@
       <div class="justify-self-end">
         <%= link_to podcast_url(podcast, format: :rss) do %>
           <div class="bg-red-700 text-gray-200 rounded-xl p-3">
-            <%= render "icons/rss" %><span class="hidden ml-2">Feed</span>
+            <%= icon "rss-fill" %> Feed
           </div>
         <% end %>
       </div>
@@ -27,7 +27,7 @@
     <% if edit? %>
     <div class="mt-4">
       <%= link_to edit_podcast_url(podcast), class: "bg-amber-700 text-gray-300 p-3 rounded-md" do %>
-        <%= render "icons/pencil" %> Edit Description
+        <%= icon "pencil-fill" %> Edit Description
       <% end %>
     </div>
     <% end %>
