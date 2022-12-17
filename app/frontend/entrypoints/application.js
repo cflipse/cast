@@ -35,3 +35,5 @@ registerControllers(application, controllers);
 
 import "~/stylesheets/application.scss"
 import 'bootstrap-icons/font/bootstrap-icons.css'
+
+import "~/stylesheets/fonts.scss"

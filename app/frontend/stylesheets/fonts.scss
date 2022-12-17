@@ -1,0 +1,22 @@
+@font-face {
+  font-family: "Packard Antique";
+  src: url("~/fonts/packardantique-webfont.woff") format("woff"),
+       url("~/fonts/packardantique-webfont.ttf")  format("truetype"),
+       url("~/fonts/packardantique-webfont.eot")  format("embedded-opentype"),
+       url("~/fonts/packardantique-webfont.svg")  format("svg")
+}
+
+@font-face {
+  font-family: "Packard Antique";
+  font-weight: bold;
+  src: url("~/fonts/packardantique-bold-webfont.woff") format("woff"),
+       url("~/fonts/packardantique-bold-webfont.ttf")  format("truetype"),
+       url("~/fonts/packardantique-bold-webfont.eot")  format("embedded-opentype"),
+       url("~/fonts/packardantique-bold-webfont.svg")  format("svg")
+
+}
+
+@font-face {
+  font-family: "Papyrus";
+  src: url("~/fonts/papyrus.ttf") format("truetype")
+}

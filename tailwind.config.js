@@ -10,6 +10,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'header': ["Packard\\ Antique", "ui-serif", "Georgia", "Cambria", "Times\\ New\\ Roman", "Times", "serif"],
+      },
       gridTemplateRows: {
         'form': "fit-content(15rem) minmax(20rem, 1fr)",
       },
