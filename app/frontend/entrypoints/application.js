@@ -34,3 +34,4 @@ const controllers = import.meta.globEager('../controllers/**/*_controller.js');
 registerControllers(application, controllers);
 
 import "~/stylesheets/application.scss"
+import 'bootstrap-icons/font/bootstrap-icons.css'
