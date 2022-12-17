@@ -25,17 +25,15 @@
 }
 
 @layer utilities {
-  @variants responsive {
-    .text-shadow-xs {
-      text-shadow: 1px 1px 0 var(--tw-shadow-color);
-    }
+  .text-shadow-xs {
+    text-shadow: 1px 1px 0 var(--tw-shadow-color);
+  }
 
-    .text-shadow {
-      text-shadow: 2px 2px 0 var(--tw-shadow-color);
-    }
+  .text-shadow {
+    text-shadow: 2px 2px 0 var(--tw-shadow-color);
+  }
 
-    .text-shadow-none {
-      text-shadow: none;
-    }
-  } 
+  .text-shadow-none {
+    text-shadow: none;
+  }
 }
