@@ -1,2 +1,2 @@
-web: bin/rails s
-vite: bin/vite dev
+web: bundle exec puma -C ./config/puma/development.rb
+vite: VITE_RUBY_HOST=dev.athas.org bin/vite dev

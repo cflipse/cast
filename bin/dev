@@ -6,4 +6,4 @@ echo "Installing foreman..."
 gem install foreman
 fi
 
-foreman start -f Procfile.dev
+foreman start -f Procfile.dev -p 8090
