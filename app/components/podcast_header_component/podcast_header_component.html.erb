@@ -5,7 +5,7 @@
 
   <div>
     <header class="flex flex-cols mb-4">
-      <h2 class="text-4xl font-bold tracking-wide text-red-700 grow"><%= link_to podcast.name, podcast_url(podcast) %></h2>
+      <h2 class="text-4xl font-bold tracking-wide text-red-700 font-header text-shadow-xs shadow-slate-600/20 grow"><%= link_to podcast.name, podcast_url(podcast) %></h2>
 
       <div class="justify-self-end">
         <%= link_to podcast_url(podcast, format: :rss) do %>

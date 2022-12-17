@@ -6,7 +6,7 @@
   <%= turbo_frame_tag @episode do %>
     <header class="mx-6">
       <div class="flex flex-row">
-        <h2 class="text-2xl py-6 grow"><%= @episode.title %></h2>
+        <h2 class="text-2xl py-6 grow font-header"><%= @episode.title %></h2>
 
         <div class="self-center">
           <%= render EpisodeAdminComponent.new @podcast, @episode, policy: policy(@episode) %>

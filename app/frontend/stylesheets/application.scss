@@ -11,6 +11,7 @@
 
   .background-image-ds-logo {
     background: url('~/images/ds_logo_crop.png') no-repeat right bottom;
+    min-height: 100px;
   }
 
   div.field_with_errors {
@@ -21,4 +22,20 @@
       @apply py-2 px-4 bg-blue-200;
     }
   }
+}
+
+@layer utilities {
+  @variants responsive {
+    .text-shadow-xs {
+      text-shadow: 1px 1px 0 var(--tw-shadow-color);
+    }
+
+    .text-shadow {
+      text-shadow: 2px 2px 0 var(--tw-shadow-color);
+    }
+
+    .text-shadow-none {
+      text-shadow: none;
+    }
+  } 
 }
