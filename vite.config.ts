@@ -11,6 +11,10 @@ export default defineConfig({
   ],
   server: {
     "port": 3046,
-    "hmr": true,
+    "hmr": {
+      clientPort: 3046,
+    },
+    host: true,
+    strictPort: true,
   }
 })
