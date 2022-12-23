@@ -35,7 +35,7 @@ ENV BUNDLE_PATH=/usr/local/bundle
 ENV BUNDLE_BIN=/usr/local/bundle/bin
 ENV GEM_HOME=/usr/local/bundle
 
-RUN gem install --default bundler:"~> 2.3" && npm install -g npm@7.24
+RUN gem install --default bundler:"~> 2.3" && npm install -g npm@9.2
 
 WORKDIR /srv/cast
 
