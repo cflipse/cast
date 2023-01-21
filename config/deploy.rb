@@ -28,7 +28,7 @@ set :deploy_to, "/srv/www/cast"
 
 # Default value for linked_dirs is []
 # append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "tmp/webpacker", "public/system", "vendor", "storage"
-append :linked_dirs, "log", "tmp/pids"
+append :linked_dirs, "log", "tmp/pids", ".bundle"
 
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
@@ -44,18 +44,12 @@ append :linked_dirs, "log", "tmp/pids"
 
 set :assets_dir, "public/vite"
 
-set :puma_preload_app, true
-set :puma_init_activerecord, true
+set :puma_role, :app
 set :puma_systemctl_user, "bwoa"
-set :puma_systemd_service_unit_name, "cast-puma"
+set :puma_service_unit_name, "cast-puma"
+
 set :puma_enable_lingering, true
-set :puma_phased_restart, true
-set :puma_bind, "tcp://0.0.0.0:6700"
-set :puma_workers, 2
 
-set :nginx_use_ssl, true
-
-set :puma_threads, [0, 8]
 set :puma_service_unit_env_vars, %w[
   RAILS_MAX_THREADS=8
   RAILS_SERVE_STATIC_FILES=true

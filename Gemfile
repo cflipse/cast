@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.1.3"
+ruby "~> 3.0"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.0.3", ">= 7.0.3.1"
@@ -73,6 +73,7 @@ gem "dry-initializer"
 
 gem "sentry-ruby"
 gem "sentry-rails"
+gem "sd_notify"
 
 group :test do
   gem "rspec-rails"
@@ -83,11 +84,10 @@ group :test do
 end
 
 group :deployment do
-  gem "capistrano3-puma", require: false
+  gem "capistrano3-puma", "~> 6.0.0.beta", require: false
   gem "capistrano-bundler", require: false
   gem "capistrano-chruby", require: false
   gem "capistrano-deploytags", require: false
-  gem "capistrano-local-precompile", require: false
   gem "capistrano-rails", require: false
   gem "capistrano-sentry", require: false
 end
