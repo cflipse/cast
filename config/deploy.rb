@@ -45,18 +45,11 @@ append :linked_dirs, "log", "tmp/pids", ".bundle"
 set :assets_dir, "public/vite"
 
 set :puma_role, :app
-set :puma_preload_app, true
-set :puma_init_activerecord, true
-set :puma_user, "bwoa"
 set :puma_systemctl_user, "bwoa"
 set :puma_service_unit_name, "cast-puma"
 
 set :puma_enable_lingering, true
-set :puma_phased_restart, true
-set :puma_bind, "tcp://0.0.0.0:6700"
-set :puma_workers, 2
 
-set :puma_threads, [0, 8]
 set :puma_service_unit_env_vars, %w[
   RAILS_MAX_THREADS=8
   RAILS_SERVE_STATIC_FILES=true
