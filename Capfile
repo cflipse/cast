@@ -28,7 +28,6 @@ install_plugin Capistrano::SCM::Git
 
 require "capistrano/chruby"
 require "capistrano/bundler"
-require "capistrano/local_precompile"
 require "capistrano/rails/migrations"
 require "capistrano/deploytags"
 require "capistrano/sentry"

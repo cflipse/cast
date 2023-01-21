@@ -87,7 +87,6 @@ group :deployment do
   gem "capistrano-bundler", require: false
   gem "capistrano-chruby", require: false
   gem "capistrano-deploytags", require: false
-  gem "capistrano-local-precompile", require: false
   gem "capistrano-rails", require: false
   gem "capistrano-sentry", require: false
 end
