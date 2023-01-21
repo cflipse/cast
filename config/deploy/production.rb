@@ -23,7 +23,7 @@ role :app, %w[bwoa@waverly.athas.org]
 role :db, %w[bwoa@waverly.athas.org]
 role :web, %w[bwoa@waverly.athas.org]
 
-set :chruby_ruby, "3.1.3"
+set :chruby_ruby, "3.2.0"
 append :linked_files, "config/credentials/production.key"
 
 set :puma_env, "production"
