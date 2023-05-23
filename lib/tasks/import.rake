@@ -13,4 +13,22 @@ namespace :import do
       puts ep.errors.full_messages
     end
   end
+
+
+  desc "imports To Tame a Land"
+  task tame: :environment do
+    require "import_feed"
+    import = ImportFeed.new("https://feed.podbean.com/lawfulstupidrpgdarksun/feed.xml")
+    cast = Podcast.find_by_slug("to-tame-a-land") || import.build_podcast(slug: "to-tame-a-land")
+
+    import.build_episodes(cast)
+    cast.save!
+   rescue ActiveRecord::RecordInvalid
+    puts cast.errors.full_messages
+    cast.episodes.each do |ep|
+      puts ep.errors.full_messages
+    end
+ end
+
+
 end
