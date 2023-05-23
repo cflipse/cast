@@ -4,8 +4,7 @@ lock "~> 3.17.1"
 set :stage, :production
 
 set :application, "cast"
-set :repo_url, "git@github.com:cflipse/bwoa.git"
-set :repo_tree, "cast"
+set :repo_url, "git@github.com:cflipse/cast.git"
 
 # Default branch is :master
 ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
