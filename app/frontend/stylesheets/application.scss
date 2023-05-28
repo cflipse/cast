@@ -5,13 +5,39 @@
 @import "easymde/dist/easymde.min";
 
 @layer base {
+  :root {
+    --header-color: #9c0000;
+    --sand: #dec897;
+    --menu-gradient: linear-gradient(var(--sand), #806529);
+    --darksand: #c9b382;
+  }
+
+
   h1 {
     @apply  text-3xl;
+  }
+}
+
+@layer components {
+  html {
+    background: url('~/images/papyrus_map.png') no-repeat fixed center top black;
   }
 
   .background-image-ds-logo {
     background: url('~/images/ds_logo_crop.png') no-repeat right bottom;
     min-height: 100px;
+  }
+
+  #heading {
+    h1 {
+      color: var(--header-color);
+      text-shadow: 2px 2px 0.1em black;
+      @apply font-bold font-header text-5xl;
+    }
+  }
+
+  #sitenav {
+    background-image: var(--menu-gradient);
   }
 
   div.field_with_errors {
