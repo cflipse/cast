@@ -1,6 +1,6 @@
 <div class="flex flex-row gap-8 mb-8">
-  <div class="w-1/2">
-    <%= image_tag podcast.image_url if podcast.image.present? %>
+  <div class="max-w-md">
+    <%= link_to image_tag(podcast.image_url), podcast_url(podcast) if podcast.image.present? %>
   </div>
 
   <div>
