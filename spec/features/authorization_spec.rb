@@ -15,7 +15,7 @@ RSpec.describe "Authorizing as an admin", type: :feature do
 
       visit "/podcasts"
 
-      within "#heading" do
+      within "#sitenav" do
         # and verify that we are still logged in by header display
         expect(page).to have_content(profile.display_name)
       end
@@ -27,7 +27,7 @@ RSpec.describe "Authorizing as an admin", type: :feature do
       visit "/login"
       click_on "Google"
 
-      within "#heading" do
+      within "#sitenav" do
         click_on "Log out"
       end
 
