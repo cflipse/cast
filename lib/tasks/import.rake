@@ -14,7 +14,6 @@ namespace :import do
     end
   end
 
-
   desc "imports To Tame a Land"
   task tame: :environment do
     require "import_feed"
@@ -23,12 +22,10 @@ namespace :import do
 
     import.build_episodes(cast)
     cast.save!
-   rescue ActiveRecord::RecordInvalid
+  rescue ActiveRecord::RecordInvalid
     puts cast.errors.full_messages
     cast.episodes.each do |ep|
       puts ep.errors.full_messages
     end
- end
-
-
+  end
 end
