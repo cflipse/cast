@@ -1,8 +1,9 @@
-<article class="bg-slate-200 p-6 shadow-lg">
+<article class="p-6 shadow-lg">
   <%= render PodcastHeaderComponent.new @podcast, policy: policy(@podcast) %>
 
-  <section id="hosts">
-    <ul>
+  <section id="hosts" class="flex gap-4">
+    <strong>Hosted by: </strong>
+    <ul class="flex flex-wrap gap-3">
       <% @podcast.hosts.each do |host| %>
         <li><%= host.display_name %></li>
       <% end %>
@@ -11,7 +12,7 @@
 </article>
 
 
-<section id="episodes">
+<section id="episodes" class="p-4">
   <% @podcast.episodes.published.each do |episode| %>
     <%= turbo_frame_tag episode do %>
       <%= render "episodes/summary", episode: episode, podcast: @podcast %>
