@@ -28,6 +28,12 @@
     min-height: 100px;
   }
 
+  body>section {
+    display: grid;
+    grid-template-rows: fit-content(3rem) fit-content(2rem) 1fr fit-content(2rem);
+  }
+
+
   #heading {
     h1 {
       color: var(--header-color);
