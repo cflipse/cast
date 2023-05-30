@@ -1,8 +1,8 @@
 class PodcastsController < ApplicationController
-  after_action :verify_authorized
+  after_action :verify_authorized, except: [:index, :show]
 
   def index
-    @podcasts = authorize Podcast.all
+    @podcasts = Podcast.all
   end
 
   def new
@@ -23,7 +23,7 @@ class PodcastsController < ApplicationController
   end
 
   def show
-    @podcast = authorize Podcast.find_by(slug: params[:id])
+    @podcast = Podcast.find_by(slug: params[:id])
   end
 
   def edit
