@@ -16,7 +16,9 @@ xml.rss version: "2.0", "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.
 
     xml.description @podcast.description
     xml.category "Games &amp; Hobbies"
-    xml.tag! "itunes:category", "Games &amp; Hobbies"
+    xml.tag! "itunes:category", text: "Leisure" do
+      xml.tag! "itunes:category", text: "Games"
+    end
 
     xml.language "en-us"
     xml.lastBuildDate @podcast.updated_at
