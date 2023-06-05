@@ -9,7 +9,10 @@ xml.rss version: "2.0", "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.
 
     xml.tag! "itunes:owner" do
       xml.tag! "itunes:email", "flip@athas.org"
+      xml.tag! "The Burnt World of Athas"
     end
+
+    xml.tag! "itunes:author", "The Burnt World of Athas"
 
     xml.description @podcast.description
     xml.category "Games &amp; Hobbies"
