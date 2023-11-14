@@ -40,3 +40,5 @@ node_modules
 /config/credentials/staging.key
 
 /db/dumps/*.sql
+
+/certs/*

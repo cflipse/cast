@@ -1,10 +1,11 @@
 default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
+  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>
 
 development:
   <<: *default
-  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>/casts_development
+  database: casts_development
   prepared_statements: false
 
 # Warning: The database defined as "test" will be erased and
@@ -12,7 +13,7 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>/casts_test
+  database: casts_test
   prepared_statements: false
 
 production:

@@ -1,0 +1,19 @@
+# start a server with
+#  nohup minio server ./data --console-adress ":9001" --certs-dir=./certs
+
+if [ -f .env.development ]; then source .env.development ; fi
+if [ -f .env ]; then source .env ; fi
+
+mcli alias set spaces ${MINIO_CONSOLE} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+
+cp /etc/letsencrypt/live/dev.athas.org/privkey.pem certs/private.key
+cp /etc/letsencrypt/live/dev.athas.org/fullchain.pem certs/public.crt
+
+mcli mb spaces/casts;
+mcli anonymous set public spaces/casts;
+
+mkdir -p db/spaces/casts/development/
+
+# s3cmd get s3://bwoa-files/files/ --recursive --skip-existing db/spaces/bwoa-development/development/
+
+#mcli cp  ./db/spaces/* spaces/ --recursive
