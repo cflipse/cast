@@ -19,23 +19,23 @@ RUN apk add --no-cache \
 
 # These take longer to build
 RUN gem install \
-  bootsnap:1.13.0 \
-  nio4r:2.5.8 \
+  bootsnap:1.17.0 \
+  nio4r:2.5.9 \
   bindex:0.8.1 \
-  msgpack:1.6.0 \
-  json:2.6.2 \
-  pg:1.4.4 \
-  taglib-ruby:1.1.2 \
-  websocket-driver:0.7.5 \
-  debug:1.6.2 \
-  puma:5.6.5
+  msgpack:1.7.2 \
+  json:2.6.3 \
+  pg:1.5.4 \
+  taglib-ruby:1.1.3 \
+  websocket-driver:0.7.6 \
+  debug:1.8.0 \
+  puma:6.4.0
 
 ENV BUNDLE_JOBS=4
 ENV BUNDLE_PATH=/usr/local/bundle
 ENV BUNDLE_BIN=/usr/local/bundle/bin
 ENV GEM_HOME=/usr/local/bundle
 
-RUN gem install --default bundler:"~> 2.3" && npm install -g npm@9.2
+RUN gem install --default bundler:"~> 2.4" && npm install -g npm@9.2
 
 WORKDIR /srv/cast
 
