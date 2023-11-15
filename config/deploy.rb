@@ -42,6 +42,7 @@ append :linked_dirs, "log", "tmp/pids", ".bundle"
 # set :ssh_options, verify_host_key: :secure
 
 set :assets_dir, "public/vite"
+set :assets_roles, [:app]
 
 set :puma_role, :app
 set :puma_systemctl_user, "bwoa"
