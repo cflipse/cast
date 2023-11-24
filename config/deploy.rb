@@ -54,3 +54,7 @@ set :puma_service_unit_env_vars, %w[
   RAILS_MAX_THREADS=8
   RAILS_SERVE_STATIC_FILES=true
 ]
+
+# disable asset / manifest backup
+Rake::Task["deploy:assets:backup_manifest"].clear_actions
+Rake::Task["deploy:assets:restore_manifest"].clear_actions
