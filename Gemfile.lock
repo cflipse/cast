@@ -252,6 +252,9 @@ GEM
       activesupport (>= 3.0.0)
     racc (1.7.3)
     rack (2.2.8)
+    rack-google-analytics (1.2.0)
+      actionpack
+      activesupport
     rack-protection (3.1.0)
       rack (~> 2.2, >= 2.2.4)
     rack-proxy (0.7.7)
@@ -445,6 +448,7 @@ DEPENDENCIES
   pry
   puma
   pundit
+  rack-google-analytics
   rails (~> 7.0.3, >= 7.0.3.1)
   redis (~> 4.0)
   rspec-rails

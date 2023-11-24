@@ -75,6 +75,8 @@ gem "sentry-ruby"
 gem "sentry-rails"
 gem "sd_notify"
 
+gem "rack-google-analytics", require: "rack/google-analytics"
+
 group :test do
   gem "rspec-rails"
   gem "capybara"
