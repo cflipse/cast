@@ -14,7 +14,8 @@ Rails.application.configure do
   # allow non-localhost hosts
   Rails.application.config.hosts = [
     "localhost",
-    "dev.athas.org"
+    "dev.athas.org",
+    "0.0.0.0",
   ]
 
   config.web_console.permissions = Socket.ip_address_list.reduce([]) do |res, addrinfo|
