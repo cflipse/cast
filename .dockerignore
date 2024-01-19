@@ -6,3 +6,5 @@ node_modules
 .bundle
 log
 tmp
+
+db/spaces
