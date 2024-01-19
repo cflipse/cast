@@ -68,3 +68,6 @@ COPY . .
 
 COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
+
+ENTRYPOINT ["bin/docker-entrypoint"]
+CMD ["./bin/rails", "server"]
