@@ -38,6 +38,7 @@ ENV GEM_HOME=/usr/local/bundle
 RUN gem install --default bundler:"~> 2.4" && npm install -g npm@9.2
 
 WORKDIR /srv/cast
+EXPOSE 6700
 
 copy Gemfile* package*json /srv/cast/
 

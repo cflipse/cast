@@ -1,0 +1,12 @@
+# Name of the container image.
+image: bwoa/casts
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - waverly.athas.org
+
+  workers:
+    hosts:
+      - waverly.athas.org
