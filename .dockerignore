@@ -8,3 +8,5 @@ log
 tmp
 
 db/spaces
+
+.env.production

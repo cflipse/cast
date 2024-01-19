@@ -3,10 +3,11 @@ service: cast
 
 servers:
   web:
-  workers:
-    cmd: sidekiq
 
 env:
+  clear:
+    RAILS_LOG_TO_STDOUT: true
+    RAILS_SERVE_STATIC_FILES: true
   secret:
     - RAILS_MASTER_KEY
 
@@ -32,8 +33,9 @@ traefik:
 
 # Configure a custom healthcheck (default is /up on port 3000)
 healthcheck:
-   path: /up
-   port: 6700
+  path: /
+  port: 6700
+  interval: 5s
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old

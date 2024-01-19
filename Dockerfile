@@ -1,6 +1,7 @@
 arg version=3.2.2-alpine
 
 FROM ruby:${version} as base
+WORKDIR /srv/cast
 
 RUN apk add --no-cache \
   busybox \
@@ -53,13 +54,16 @@ COPY Gemfile* package*json /srv/cast/
 RUN bundle install
 RUN npm ci
 
-COPY . .
 
 FROM development as assets
+ENV RAILS_ENV=production
+
+COPY . .
 
 RUN SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile
 
 from base as production
+EXPOSE 6700
 COPY . .
 
 COPY --from=assets /usr/local/bundle /usr/local/bundle

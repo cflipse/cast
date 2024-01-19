@@ -6,7 +6,10 @@ servers:
   web:
     hosts:
       - waverly.athas.org
+    labels:
+      traefik.http.routers.cast-production.entrypoints: web
+      traefik.http.routers.cast-production.rule: Host(`cast.athas.org`, `localhost`, `waverly.athas.org`)
 
-  workers:
-    hosts:
-      - waverly.athas.org
+env:
+  clear:
+    RAILS_ENV: production
