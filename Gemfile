@@ -86,6 +86,8 @@ group :test do
 end
 
 group :deployment do
+  gem "kamal"
+
   gem "capistrano3-puma", "~> 6.0.0.beta", require: false
   gem "capistrano-bundler", require: false
   gem "capistrano-chruby", require: false
