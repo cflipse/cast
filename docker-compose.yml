@@ -9,8 +9,7 @@ x-conditions:
 
 x-cast-volumes: &castvolumes
   volumes:
-    - ./cast:/srv/cast
-    - ./cast/log:/srv/cast/log
+    - .:/srv/cast
 
 services:
   redis:
@@ -23,25 +22,28 @@ services:
   cast:
     build:
       context: .
+      target: development
       dockerfile: Dockerfile
     image: castimage
     profiles:
       - cast
-    command: "rails server"
+    command: "bin/rails server"
     depends_on:
       castdb: *healthy
     links:
       - castdb
-      - castjs
+      - vite
       - minio
     <<: *castvolumes
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6700"]
+    ports:
+      - 6700:6700
     environment:
       SPACES_ENDPOINT: http://minio:9000/
       SPACES_HOST: https://dev.athas.org:9000/casts/
       CASTS_DB: postgresql://bwoa:rikus@castdb:5432
-      VITE_RUBY_HOST: castjs
+      VITE_RUBY_HOST: vite
 
   castdb:
     image: postgres:13
@@ -58,7 +60,7 @@ services:
       - castdb:/var/lib/postgresql/data
       - ./db/dumps/casts.sql:/docker-entrypoint-initdb.d/init.sql
 
-  castjs:
+  vite:
     image: castimage
     profiles:
       - cast
@@ -67,7 +69,7 @@ services:
       GEM_HOME: /usr/local/castgems/
       GEM_PATH: /usr/local/castgems:/usr/local/bundle
       VITE_RUBY_HOST: 0.0.0.0
-    command: vite dev
+    command: bin/vite dev
 
   minio:
     image: minio/minio

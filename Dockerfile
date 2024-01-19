@@ -1,21 +1,34 @@
-FROM ruby:3.2.2-alpine
+arg version=3.2.2-alpine
+
+FROM ruby:${version} as base
 
 RUN apk add --no-cache \
-  build-base \
   busybox \
   ca-certificates \
   curl \
-  git \
   graphicsmagick \
+  postgresql \
+  tzdata \
+  taglib \
+  rsync
+
+ENV BUNDLE_JOBS=4 \
+    BUNDLE_PATH=/usr/local/bundle \
+    GEM_HOME=/usr/local/bundle
+
+CMD bin/rails server
+
+FROM base as development
+
+RUN apk add --no-cache \
+  build-base \
+  git \
   libffi-dev \
   libsodium-dev \
   nodejs \
   npm \
-  openssh-client \
   postgresql-dev \
-  tzdata \
-  taglib-dev \
-  rsync
+  taglib-dev
 
 # These take longer to build
 RUN gem install \
@@ -30,21 +43,24 @@ RUN gem install \
   debug:1.8.0 \
   puma:6.4.0
 
-ENV BUNDLE_JOBS=4
-ENV BUNDLE_PATH=/usr/local/bundle
-ENV BUNDLE_BIN=/usr/local/bundle/bin
-ENV GEM_HOME=/usr/local/bundle
-
 RUN gem install --default bundler:"~> 2.4" && npm install -g npm@9.2
 
 WORKDIR /srv/cast
 EXPOSE 6700
 
-copy Gemfile* package*json /srv/cast/
+COPY Gemfile* package*json /srv/cast/
 
 RUN bundle install
 RUN npm ci
 
-copy . /srv/cast/
+COPY . .
 
-CMD rails server
+FROM development as assets
+
+RUN SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile
+
+from base as production
+COPY . .
+
+COPY --from=assets /usr/local/bundle /usr/local/bundle
+COPY --from=assets /srv/cast/public /srv/cast/public
