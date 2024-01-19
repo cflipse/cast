@@ -87,13 +87,6 @@ end
 
 group :deployment do
   gem "kamal"
-
-  gem "capistrano3-puma", "~> 6.0.0.beta", require: false
-  gem "capistrano-bundler", require: false
-  gem "capistrano-chruby", require: false
-  gem "capistrano-deploytags", require: false
-  gem "capistrano-rails", require: false
-  gem "capistrano-sentry", require: false
 end
 
 group :development, :test do
