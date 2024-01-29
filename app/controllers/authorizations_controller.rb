@@ -1,4 +1,6 @@
 class AuthorizationsController < ApplicationController
+  skip_forgery_protection
+
   def create
     email = request.env.dig("omniauth.auth", "info", "email")
     profile = Profile.find_by(email: email)
