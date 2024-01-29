@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Authorizing as an admin", type: :feature do
-  context "with an existing profile" do
+  context "with an existing profile", :js do
     let(:profile) { create :profile }
 
     it "logs in" do
