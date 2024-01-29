@@ -87,4 +87,6 @@ Rails.application.configure do
   config.middleware.use Rack::GoogleAnalytics, tracker: "G-YF46QV3FCW"
 
   config.session_store :cache_store, key: "_cast_session", compress: true, pool_size: 5, expire_after: 1.year
+
+  config.action_controller.allow_forgery_protection = false
 end
