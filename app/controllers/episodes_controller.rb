@@ -29,7 +29,7 @@ class EpisodesController < ApplicationController
       redirect_to podcast_path(@podcast),
         notice: "#{@episode.title} has been added"
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -43,7 +43,7 @@ class EpisodesController < ApplicationController
       redirect_to return_path,
         notice: "#{@episode.title} has been updated"
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 

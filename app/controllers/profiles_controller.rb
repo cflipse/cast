@@ -17,7 +17,7 @@ class ProfilesController < ApplicationController
       redirect_to profile_path(@profile),
         notice: "Created profile for #{@profile.display_name}"
     else
-      render :new
+      render :new, status: :unprocessible_entity
     end
   end
 
@@ -39,7 +39,7 @@ class ProfilesController < ApplicationController
       redirect_to profile_path(@profile),
         notice: "Updated #{@profile.display_name}"
     else
-      render :edit
+      render :edit, status: :unprocessible_entity
     end
   end
 end
