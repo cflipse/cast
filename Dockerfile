@@ -6,6 +6,7 @@ WORKDIR /srv/cast
 RUN apk add --no-cache \
   busybox \
   ca-certificates \
+  file \
   curl \
   graphicsmagick \
   postgresql \
