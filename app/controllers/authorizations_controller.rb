@@ -1,5 +1,4 @@
 class AuthorizationsController < ApplicationController
-  protect_from_forgery except: :create
 
   def create
     email = request.env.dig("omniauth.auth", "info", "email")
