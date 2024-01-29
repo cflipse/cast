@@ -1,5 +1,4 @@
 class AuthorizationsController < ApplicationController
-
   def create
     email = request.env.dig("omniauth.auth", "info", "email")
     profile = Profile.find_by(email: email)

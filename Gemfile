@@ -36,7 +36,7 @@ gem "taglib-ruby"
 
 gem "acts-as-taggable-on"
 
-gem "omniauth"
+gem "omniauth", "2.1.1"
 gem "omniauth-google-oauth2"
 gem "omniauth-rails_csrf_protection"
 gem "pundit"
