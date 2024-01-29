@@ -85,4 +85,6 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   config.middleware.use Rack::GoogleAnalytics, tracker: "G-YF46QV3FCW"
+
+  config.session_store :cache_store, key: "_cast_session", compress: true, pool_size: 5, expire_after: 1.year
 end
