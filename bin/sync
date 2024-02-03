@@ -4,16 +4,23 @@
 if [ -f .env.development ]; then source .env.development ; fi
 if [ -f .env ]; then source .env ; fi
 
-mcli alias set minio ${MINIO_CONSOLE} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+if [ -z "${MINIO_ADDRESS}" ]; then
+  echo "No MINIO server found";
+  exit 1;
+fi
+
+echo "mirroring cast files"
+mkdir -p db/spaces/casts/development/
+mcli mirror spaces/casts/files/ db/spaces/casts/development
+
+
+echo "upload to local minio"
+mcli alias set cast-minio http://${MINIO_ADDRESS} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
 
 cp /etc/letsencrypt/live/dev.athas.org/privkey.pem certs/private.key
 cp /etc/letsencrypt/live/dev.athas.org/fullchain.pem certs/public.crt
 
-mcli mb minio/casts;
-mcli anonymous set public minio/casts;
+mcli mb cast-minio/casts/development;
+mcli anonymous set public cast-minio/casts/development;
 
-mkdir -p db/spaces/casts/development/
-
-# s3cmd get s3://bwoa-files/files/ --recursive --skip-existing db/spaces/bwoa-development/development/
-
-#mcli cp  ./db/spaces/* spaces/ --recursive
+mcli cp  ./db/spaces/casts/ cast-minio/casts/ --recursive
