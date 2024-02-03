@@ -6,7 +6,10 @@ class EpisodesController < ApplicationController
   end
 
   def show
-    @episode = authorize @podcast.episodes.find(params[:id])
+    @episode = @podcast.episodes.where(id: params[:id])
+      .or(@podcast.episodes.by_slug(params[:id])).first
+
+    authorize @episode
   end
 
   def new

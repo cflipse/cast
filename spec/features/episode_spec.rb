@@ -68,4 +68,21 @@ RSpec.feature "Episodes", type: :feature do
 
     expect(page).to have_selector("audio[src='#{episode.audio_url}']")
   end
+
+  scenario "view an episode by slug or uuid" do
+    episode = create :episode, :published, podcast: podcast
+
+    episode.update(name: "ooops, got the name wrong the first time")
+
+    aggregate_failures do
+      visit podcast_episode_url(podcast, episode.id)
+      expect(page).to have_text(episode.title)
+
+      visit podcast_episode_url(podcast, episode.slugs.first)
+      expect(page).to have_text(episode.title)
+
+      visit podcast_episode_url(podcast, episode.slugs.last)
+      expect(page).to have_text(episode.title)
+    end
+  end
 end
