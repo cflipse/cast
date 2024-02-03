@@ -28,4 +28,47 @@ RSpec.describe Episode do
 
     expect(podcast.updated_at).to be_within(1.second).of(Time.zone.now)
   end
+
+  describe "#slugs" do
+    it "is generated from the episode and title" do
+      episode = build :episode, number: 34, name: "Testing a Thing"
+      episode.save
+
+      expect(episode.slugs).to eq(["34-testing-a-thing"])
+    end
+
+    it "only preserves saved slugs" do
+      episode = build :episode, number: 34, name: "Testing a Thing"
+      episode.validate
+
+      episode.name = "ooops, something else"
+      episode.save
+
+      expect(episode.slugs).to eq(["34-ooops-something-else"])
+    end
+
+    it "keeps the most recent slug on top" do
+      episode = create :episode, number: nil, name: "Testing a Thing"
+      episode.update(number: 77)
+      expect(episode.slugs).to eq([
+        "77-testing-a-thing",
+        "testing-a-thing"
+      ])
+    end
+
+    it "is findable by it's slugs" do
+      episode = create :episode, number: nil, name: "Testing a Thing"
+      episode.update(number: 77)
+
+      expect(Episode.by_slug("77-testing-a-thing").first).to eq episode
+      expect(Episode.by_slug("testing-a-thing").first).to eq episode
+    end
+
+    it "does not duplicate slugs" do
+      episode = create :episode, number: nil, name: "Testing a Thing"
+      episode.update show_notes: "A thing happened.  It was hilarious"
+
+      expect(episode.slugs).to eq ["testing-a-thing"]
+    end
+  end
 end
