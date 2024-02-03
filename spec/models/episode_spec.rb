@@ -71,4 +71,19 @@ RSpec.describe Episode do
       expect(episode.slugs).to eq ["testing-a-thing"]
     end
   end
+
+  describe "#slug" do
+    it "retreives the first slug" do
+      episode = create :episode, number: nil, name: "Testing a Thing"
+      episode.update(number: 77)
+      expect(episode.slug).to eq("77-testing-a-thing")
+    end
+
+    it "falls back to the id" do
+      episode = create :episode, number: nil, name: "Testing a Thing"
+      episode.slugs.clear
+
+      expect(episode.slug).to eq episode.id
+    end
+  end
 end

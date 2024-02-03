@@ -20,6 +20,10 @@ class Episode < ApplicationRecord
     where("slugs @> ?", "{#{slug}}")
   }
 
+  def slug
+    slugs.first.presence || id
+  end
+
   def title
     if number
       "Episode #{number}: #{name}"
