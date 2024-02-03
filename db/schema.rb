@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_12_170101) do
+ActiveRecord::Schema[7.0].define(version: 2024_02_03_163942) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "hstore"
@@ -30,8 +30,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_12_170101) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at", precision: nil
+    t.citext "slugs", default: [], null: false, array: true
     t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
     t.index ["published"], name: "index_episodes_on_published"
+    t.index ["slugs"], name: "index_episodes_on_slugs", using: :gin
   end
 
   create_table "podcast_hosts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
