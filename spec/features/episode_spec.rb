@@ -35,7 +35,6 @@ RSpec.feature "Episodes", type: :feature do
 
     click_on "Edit Episode"
 
-    fill_in "Season", with: 2
     fill_in "Number", with: 1
 
     fill_in "Show notes", with: lorem

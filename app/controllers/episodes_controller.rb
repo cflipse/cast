@@ -23,7 +23,7 @@ class EpisodesController < ApplicationController
 
   def create
     @episode = authorize @podcast.episodes.build params.require(:episode)
-      .permit(:name, :number, :season, :published, :audio, :description, :show_notes, :explicit)
+      .permit(:name, :number, :published, :audio, :description, :show_notes, :explicit)
 
     if @episode.save
       redirect_to podcast_path(@podcast),
@@ -37,7 +37,7 @@ class EpisodesController < ApplicationController
     @episode = authorize @podcast.episodes.find(params[:id])
 
     @episode.attributes = params.require(:episode)
-      .permit(:name, :number, :season, :published, :audio, :description, :show_notes, :explicit)
+      .permit(:name, :number, :published, :audio, :description, :show_notes, :explicit)
 
     if @episode.save
       redirect_to return_path,

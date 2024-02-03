@@ -1,7 +1,7 @@
 class Podcast < ApplicationRecord
   include CoverUploader::Attachment(:image)
 
-  has_many :episodes, -> { order published: :desc, season: :desc, number: :desc },
+  has_many :episodes, -> { order published: :desc, number: :desc },
     dependent: :destroy
 
   has_many :podcast_hosts, dependent: :destroy
