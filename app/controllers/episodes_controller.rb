@@ -65,7 +65,7 @@ class EpisodesController < ApplicationController
     if params[:index].present?
       podcast_path(@podcast)
     else
-      podcast_episode_path(@podcast, @episode)
+      podcast_episode_path(@podcast, @episode.slug)
     end
   end
 end

@@ -7,7 +7,7 @@
     <%= latest.description %>
 
     <div class="my-4">
-      <%= link_to "Listen now", podcast_episode_path(podcast, latest),
+      <%= link_to "Listen now", podcast_episode_path(podcast, latest.slug),
         class: "p-3 bg-red-700 shadow text-gray-200 rounded-md" %>
     </div>
   </section>

@@ -1,7 +1,7 @@
 <article class="my-4">
   <header class="flex flex-cols">
     <h3 class="text-xl text-red-700 font-semibold tracking-wide underline grow">
-      <%= link_to episode.title, podcast_episode_path(@podcast, episode), data: { "turbo-frame": "_top" } %>
+      <%= link_to episode.title, podcast_episode_path(@podcast, episode.slug), data: { "turbo-frame": "_top" } %>
     </h3>
 
     <%= link_to icon("pencil-fill"), edit_podcast_episode_url(podcast, episode, index: true) if policy(episode).edit? %>
