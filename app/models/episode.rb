@@ -3,6 +3,10 @@ class Episode < ApplicationRecord
 
   include AudioUploader::Attachment(:audio)
 
+  normalizes :slugs, with: -> { _1.map(&:parameterize).uniq }
+
+  before_save :slugify
+
   validates :name, presence: true
   validates :number, numericality: true,
     uniqueness: {scope: :podcast_id},
@@ -12,11 +16,22 @@ class Episode < ApplicationRecord
 
   scope :published, -> { where(deleted_at: nil).and where.not(published: nil) }
 
+  scope :by_slug, ->(slug) {
+    where("slugs @> ?", "{#{slug}}")
+  }
+
   def title
     if number
       "Episode #{number}: #{name}"
     else
       name
     end
+  end
+
+  private
+
+  def slugify
+    [number, name.parameterize].join("-")
+      .then { |slug| slugs.unshift slug }
   end
 end
