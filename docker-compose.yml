@@ -41,7 +41,7 @@ services:
       - 6700:6700
     environment:
       SPACES_ENDPOINT: http://minio:9000/
-      SPACES_HOST: https://dev.athas.org:9000/casts/
+      SPACES_HOST: http://localhost:9000/casts/
       CASTS_DB: postgresql://bwoa:rikus@castdb:5432
       VITE_RUBY_HOST: vite
 
