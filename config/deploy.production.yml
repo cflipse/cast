@@ -13,3 +13,4 @@ servers:
 env:
   clear:
     RAILS_ENV: production
+    OMNIAUTH_REDIRECT_URI: "https://cast.athas.org/auth/google_oauth2/callback"
