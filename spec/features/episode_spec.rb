@@ -85,4 +85,10 @@ RSpec.feature "Episodes", type: :feature do
       expect(page).to have_text(episode.title)
     end
   end
+
+  scenario "vewing an episode that does not exist" do
+    visit podcast_episode_url(podcast, SecureRandom.uuid)
+
+    expect(page).to have_text "Doesn't exist"
+  end
 end

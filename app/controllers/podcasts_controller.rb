@@ -23,15 +23,15 @@ class PodcastsController < ApplicationController
   end
 
   def show
-    @podcast = Podcast.find_by(slug: params[:id])
+    @podcast = Podcast.find_by!(slug: params[:id])
   end
 
   def edit
-    @podcast = authorize Podcast.find_by(slug: params[:id])
+    @podcast = authorize Podcast.find_by!(slug: params[:id])
   end
 
   def update
-    @podcast = authorize Podcast.find_by(slug: params[:id])
+    @podcast = authorize Podcast.find_by!(slug: params[:id])
 
     @podcast.attributes = params.require(:podcast)
       .permit(:name, :description, :explicit, :image, :slug, host_ids: [])

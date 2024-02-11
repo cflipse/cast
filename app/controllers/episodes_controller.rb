@@ -2,12 +2,12 @@ class EpisodesController < ApplicationController
   after_action :verify_authorized
 
   before_action do
-    @podcast = Podcast.find_by(slug: params[:podcast_id])
+    @podcast = Podcast.find_by!(slug: params[:podcast_id])
   end
 
   def show
     @episode = @podcast.episodes.where(id: params[:id])
-      .or(@podcast.episodes.by_slug(params[:id])).first
+      .or(@podcast.episodes.by_slug(params[:id])).first!
 
     authorize @episode
   end
