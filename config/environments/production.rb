@@ -85,4 +85,8 @@ Rails.application.configure do
   # ]
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # _something_ is borked with the tokens in production, and I havn't had the
+  # chance to figure out what
+  config.action_controller.allow_forgery_protection = false
 end
