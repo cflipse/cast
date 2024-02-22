@@ -16,7 +16,10 @@ class Episode < ApplicationRecord
 
   scope :undeleted, -> { where(deleted_at: nil) }
   scope :published, -> { undeleted.where.not(published: nil) }
-  scope :live, -> { published.where("published <= NOW()") }
+  scope :live, -> {
+    published.where "published <= ?",
+      Time.now.in_time_zone("America/New_York").change(hour: 8, min: 0)
+  }
 
   scope :by_slug, ->(slug) {
     where("slugs @> ?", "{#{slug}}")

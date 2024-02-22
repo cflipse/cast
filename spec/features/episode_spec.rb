@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.feature "Episodes", type: :feature do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:podcast) { create :podcast }
 
   scenario "Create a new episode" do
@@ -70,14 +72,20 @@ RSpec.feature "Episodes", type: :feature do
   end
 
   scenario "guests don't see pending episodes", js: true do
-    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now
+    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now.to_date
+
+    visit podcast_path(podcast)
+    expect(page).not_to have_text(episode.title)
+
+    # verify they can't see it when the day has changed in UTC.
+    travel_to Time.current.in_time_zone("America/New_York").beginning_of_day + 21.hours
 
     visit podcast_path(podcast)
     expect(page).not_to have_text(episode.title)
   end
 
   scenario "editors can see pending episodes" do
-    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now
+    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now.to_date
 
     login_as FactoryBot.create :profile, roles: [podcast.slug]
 
