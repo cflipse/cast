@@ -69,6 +69,22 @@ RSpec.feature "Episodes", type: :feature do
     expect(page).to have_selector("audio[src='#{episode.audio_url}']")
   end
 
+  scenario "guests don't see pending episodes", js: true do
+    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now
+
+    visit podcast_path(podcast)
+    expect(page).not_to have_text(episode.title)
+  end
+
+  scenario "editors can see pending episodes" do
+    episode = create :episode, :published, podcast: podcast, published: 1.day.from_now
+
+    login_as FactoryBot.create :profile, roles: [podcast.slug]
+
+    visit podcast_path(podcast)
+    expect(page).to have_text(episode.title)
+  end
+
   scenario "view an episode by slug or uuid" do
     episode = create :episode, :published, podcast: podcast
 

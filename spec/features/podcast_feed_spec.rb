@@ -7,6 +7,7 @@ RSpec.describe "RSS Feed" do
   it "provides a list of all published episodes" do
     create_list :episode, 7, :published, podcast: podcast
     create :episode, :published, deleted_at: 3.days.ago, podcast: podcast
+    create :episode, :published, published: 1.day.from_now, podcast: podcast
 
     visit "/"
 

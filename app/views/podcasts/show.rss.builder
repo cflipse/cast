@@ -27,7 +27,7 @@ xml.rss version: "2.0", "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.
     xml.tag! "itunes:explicit", @podcast.explicit?
     xml.tag! "itunes:summary", @podcast.description
 
-    @podcast.episodes.published.each do |episode|
+    @episodes.each do |episode|
       xml.item do
         xml.title episode.title
         xml.description episode.description

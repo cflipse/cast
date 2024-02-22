@@ -24,6 +24,12 @@ class PodcastsController < ApplicationController
 
   def show
     @podcast = Podcast.find_by!(slug: params[:id])
+
+    @episodes = if current_profile
+      @podcast.episodes.undeleted
+    else
+      @podcast.episodes.live
+    end
   end
 
   def edit

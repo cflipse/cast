@@ -13,7 +13,7 @@
 
 
 <section id="episodes" class="p-4">
-  <% @podcast.episodes.published.each do |episode| %>
+  <% @episodes.each do |episode| %>
     <%= turbo_frame_tag episode do %>
       <%= render "episodes/summary", episode: episode, podcast: @podcast %>
     <% end %>

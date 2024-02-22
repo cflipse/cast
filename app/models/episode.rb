@@ -14,7 +14,9 @@ class Episode < ApplicationRecord
 
   delegate :duration, to: :audio
 
-  scope :published, -> { where(deleted_at: nil).and where.not(published: nil) }
+  scope :undeleted, -> { where(deleted_at: nil) }
+  scope :published, -> { undeleted.where.not(published: nil) }
+  scope :live, -> { published.where("published <= NOW()") }
 
   scope :by_slug, ->(slug) {
     where("slugs @> ?", "{#{slug}}")
