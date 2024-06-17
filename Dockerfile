@@ -1,4 +1,4 @@
-arg version=3.2.2-alpine
+arg version=3.3.3-alpine
 
 FROM ruby:${version} as base
 WORKDIR /srv/cast
