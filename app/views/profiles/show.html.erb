@@ -19,4 +19,6 @@
 <% end %>
 <% end %>
 
-<%= link_to "Edit Profile", edit_profile_path(@profile) %>
+<% if policy(@profile).edit? -%>
+  <%= link_to "Edit Profile", edit_profile_path(@profile) %>
+<% end -%>
