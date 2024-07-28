@@ -1,3 +1,3 @@
 eval $(direnv export bash)
 
-ssh waverly.athas.org pg_dump -x $PROD_DB/casts_production > db/dumps/casts.sql
+pg_dump --no-owner --role=bwoa -x $PROD_DB/casts_production > db/dumps/casts.sql
