@@ -31,18 +31,18 @@ class PodcastHeaderComponent < ApplicationComponent
       "bg-amber-700 hover:bg-amber-800 text-gray-300 p-3 #{extra}"
     end
 
-    def edit_link(&block)
+    def edit_link(&)
       return unless edit?
       css = btn_css(new? ? "rounded-l-md" : "rounded-md")
 
-      link_to edit_podcast_url(podcast), class: css, &block
+      link_to(edit_podcast_url(podcast), class: css, &)
     end
 
-    def new_link(&block)
+    def new_link(&)
       return unless new?
       css = btn_css(edit? ? "rounded-r-md" : "rounded-md")
 
-      link_to new_podcast_episode_path(podcast), class: css, &block
+      link_to(new_podcast_episode_path(podcast), class: css, &)
     end
   end
 end
