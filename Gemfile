@@ -85,10 +85,6 @@ group :test do
   gem "launchy"
 end
 
-group :deployment do
-  gem "kamal"
-end
-
 group :development, :test do
   gem "factory_bot_rails", require: false
   gem "faker"

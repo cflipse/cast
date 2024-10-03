@@ -22,20 +22,13 @@ registry:
 
 # Configure builder setup.
 builder:
-  multiarch: false
+  arch: amd64
 
-# Configure custom arguments for Traefik
-traefik:
-  args:
-    accesslog: true
-    accesslog.format: json
-    entryPoints.web.address: ":80"
-
-# Configure a custom healthcheck (default is /up on port 3000)
-healthcheck:
-  path: /
-  port: 6700
-  interval: 5s
+proxy:
+  app_port: 6700
+  healthcheck:
+    path: /
+    interval: 5
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old
