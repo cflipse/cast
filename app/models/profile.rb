@@ -3,7 +3,7 @@ class Profile < ApplicationRecord
   has_many :podcasts, through: :podcast_hosts
 
   validates :login, presence: true
-  validates :email, presence: true, format: /.*@.+/
+  validates :email, presence: true, format: /\A.*@.+\z/
 
   validates :display_name, presence: true
 
