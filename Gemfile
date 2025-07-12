@@ -32,7 +32,7 @@ gem "bootsnap", require: false
 gem "shrine"
 gem "aws-sdk-s3"
 
-gem "taglib-ruby"
+gem "taglib-ruby", "< 2"
 
 gem "acts-as-taggable-on"
 
