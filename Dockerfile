@@ -1,4 +1,4 @@
-arg version=3.4.1-alpine
+arg version=3.4.5-alpine
 
 FROM ruby:${version} as base
 WORKDIR /srv/cast
@@ -12,6 +12,7 @@ RUN apk add --no-cache \
   postgresql \
   tzdata \
   taglib \
+  yaml \
   rsync
 
 ENV BUNDLE_JOBS=4 \
@@ -29,23 +30,24 @@ RUN apk add --no-cache \
   libsodium-dev \
   nodejs \
   npm \
+  yaml-dev \
   postgresql-dev \
   taglib-dev
 
 # These take longer to build
 RUN gem install \
-  bootsnap:1.17.0 \
-  nio4r:2.5.9 \
+  bootsnap:1.18.4 \
+  nio4r:2.7.4 \
   bindex:0.8.1 \
-  msgpack:1.7.2 \
-  json:2.6.3 \
-  pg:1.5.4 \
-  taglib-ruby:1.1.3 \
-  websocket-driver:0.7.6 \
-  debug:1.8.0 \
-  puma:6.4.0
+  msgpack:1.7.5 \
+  json:2.9.1 \
+  pg:1.5.9 \
+  taglib-ruby:2.0.0 \
+  websocket-driver:0.8.0 \
+  debug:1.11.0 \
+  puma:6.6.0
 
-RUN gem install --default bundler:"~> 2.4" && npm install -g npm@9.2
+RUN gem install --default bundler:"~> 2.6" && npm install -g npm@11.2
 
 WORKDIR /srv/cast
 EXPOSE 6700

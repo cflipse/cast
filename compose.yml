@@ -24,7 +24,6 @@ services:
       context: .
       target: development
       dockerfile: Dockerfile
-    image: castimage
     profiles:
       - cast
     command: "bin/rails server"
@@ -61,7 +60,10 @@ services:
       - ./db/dumps/casts.sql:/docker-entrypoint-initdb.d/init.sql
 
   vite:
-    image: castimage
+    build:
+      context: .
+      target: development
+      dockerfile: Dockerfile
     profiles:
       - cast
     <<: *castvolumes
