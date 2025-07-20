@@ -3,7 +3,7 @@ class Episode < ApplicationRecord
 
   include AudioUploader::Attachment(:audio)
 
-  normalizes :slugs, with: -> { _1.map(&:parameterize).uniq }
+  normalizes :slugs, with: -> { it.map(&:parameterize).uniq }
 
   before_save :slugify
 

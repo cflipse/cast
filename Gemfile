@@ -4,7 +4,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby "~> 3.0"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.0"
+gem "rails", "~> 8.0.0"
 
 gem "pg"
 
@@ -97,4 +97,7 @@ group :development, :test do
   gem "rubocop", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rails", require: false
+
+  gem "ruby-lsp-rails", require: false
+  gem "herb", require: false
 end
