@@ -36,18 +36,18 @@ RUN apk add --no-cache \
 
 # These take longer to build
 RUN gem install \
-  bootsnap:1.18.4 \
+  bootsnap:1.18.6 \
   nio4r:2.7.4 \
   bindex:0.8.1 \
-  msgpack:1.7.5 \
-  json:2.9.1 \
-  pg:1.5.9 \
+  msgpack:1.8.0 \
+  json:2.13.2 \
+  pg:1.6.1 \
   taglib-ruby:2.0.0 \
   websocket-driver:0.8.0 \
   debug:1.11.0 \
-  puma:6.6.0
+  puma:6.6.1
 
-RUN gem install --default bundler:"~> 2.6" && npm install -g npm@11.2
+RUN gem install --default bundler:"~> 2.7.1" && npm install -g npm@11.5.2
 
 WORKDIR /srv/cast
 EXPOSE 6700
