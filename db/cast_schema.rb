@@ -10,5 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2022_08_21_043500) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_18_135744) do
+  create_table "profiles", force: :cascade do |t|
+    t.string "uuid", null: false
+    t.string "login", null: false, collation: "NOCASE"
+    t.string "email", null: false, collation: "NOCASE"
+    t.string "display_name", null: false
+    t.string "persistence_token"
+    t.text "bio"
+    t.string "avatar"
+    t.json "roles", default: [], null: false
+    t.boolean "admin", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_profiles_on_email", unique: true
+    t.index ["login"], name: "index_profiles_on_login", unique: true
+    t.index ["persistence_token"], name: "index_profiles_on_persistence_token", unique: true
+    t.index ["uuid"], name: "index_profiles_on_uuid", unique: true
+    t.check_constraint "JSON_TYPE(roles) = 'array'", name: "check_roles_array"
+  end
 end
