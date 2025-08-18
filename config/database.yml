@@ -8,6 +8,12 @@ development:
     <<: *default
     database: casts_development
     prepared_statements: false
+  cast:
+    timeout: 5000
+    adapter: sqlite3
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    database: db/casts_development.sqlite3
+    migrations_paths: db/casts_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -17,6 +23,12 @@ test:
     <<: *default
     database: casts_test
     prepared_statements: false
+  cast:
+    timeout: 5000
+    adapter: sqlite3
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    database: db/casts_test.sqlite3
+    migrations_paths: db/casts_migrate
 
 production:
   primary:
