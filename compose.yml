@@ -40,7 +40,7 @@ services:
       VITE_RUBY_HOST: vite
 
   castdb:
-    image: postgres:13
+    image: postgres:17
     environment:
       POSTGRES_USER: bwoa
       POSTGRES_PASSWORD: rikus
