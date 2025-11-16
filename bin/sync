@@ -2,6 +2,7 @@
 #  nohup minio server ./data --console-adress ":9001" --certs-dir=./certs
 
 if [ -f .env.development ]; then source .env.development ; fi
+if [ -f rails/.env.development ]; then source rails/.env.development ; fi
 if [ -f .env ]; then source .env ; fi
 
 if [ -z "${MINIO_ADDRESS}" ]; then

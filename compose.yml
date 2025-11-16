@@ -7,10 +7,6 @@ x-conditions:
   started: &started
     condition: service_started
 
-x-cast-volumes: &castvolumes
-  volumes:
-    - .:/srv/cast
-
 services:
   redis:
     image: redis
@@ -21,7 +17,7 @@ services:
 
   cast:
     build:
-      context: .
+      context: rails
       target: development
       dockerfile: Dockerfile
     command: "bin/rails server"
@@ -31,7 +27,8 @@ services:
       - castdb
       - vite
       - minio
-    <<: *castvolumes
+    volumes:
+      - ./rails:/srv/cast
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6700"]
     ports:
@@ -59,10 +56,11 @@ services:
 
   vite:
     build:
-      context: .
+      context: rails
       target: development
       dockerfile: Dockerfile
-    <<: *castvolumes
+    volumes:
+      - ./rails:/srv/cast
     environment:
       GEM_HOME: /usr/local/castgems/
       GEM_PATH: /usr/local/castgems:/usr/local/bundle
