@@ -1,7 +1,7 @@
 default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
-  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>
+  url: <%= ENV.fetch("CASTS_DB") { Rails.application.credentials.casts_db_url } %>
 
 development:
   <<: *default
@@ -18,5 +18,5 @@ test:
 
 production:
   <<: *default
-  url: <%= ENV.fetch("CASTS_DB", Rails.application.credentials.casts_db_url) %>
+  url: <%= ENV.fetch("CASTS_DB") { Rails.application.credentials.casts_db_url } %>
   prepared_statements: false
