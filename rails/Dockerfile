@@ -21,7 +21,7 @@ ENV BUNDLE_JOBS=4 \
 
 CMD bin/rails server
 
-FROM base as development
+FROM base AS development
 
 RUN apk add --no-cache \
   build-base \
@@ -58,14 +58,14 @@ RUN bundle install
 RUN npm ci
 
 
-FROM development as assets
+FROM development AS assets
 ENV RAILS_ENV=production
 
 COPY . .
 
-RUN SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile
+RUN npx vite build
 
-from base as production
+FROM base AS production
 EXPOSE 6700
 COPY . .
 
