@@ -47,7 +47,7 @@ RUN gem install \
   debug:1.11.0 \
   puma:6.6.1
 
-RUN gem install --default bundler:"~> 2.7.1" && npm install -g npm@11.5.2
+RUN gem install --default bundler:"~> 2.7.1" && npm install -g npm@11.5.2 --ignore-scripts
 
 WORKDIR /srv/cast
 EXPOSE 6700
@@ -55,7 +55,7 @@ EXPOSE 6700
 COPY Gemfile* package*json /srv/cast/
 
 RUN bundle install
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 
 FROM development AS assets
