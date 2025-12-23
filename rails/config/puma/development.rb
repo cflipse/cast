@@ -15,8 +15,6 @@ bind "unix:///tmp/puma-cast.sock"
 #   key: ENV.fetch("SSL_KEY_FILE")
 # }
 
-pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
-
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 
