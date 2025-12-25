@@ -4,8 +4,7 @@ module Casts
   module Relations
     class Profiles < Casts::DB::Relation
       schema :profiles, infer: true do
-        attribute :roles, Types::Coercible::Array.of(Types::String)
-          .meta(read: Types::Array.of(Types::String).constructor { |json| JSON.parse(json) })
+        attribute :roles, ROM::Types::Coercible::JSON
       end
     end
   end
