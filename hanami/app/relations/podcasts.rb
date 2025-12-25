@@ -5,6 +5,11 @@ module Casts
     class Podcasts < Casts::DB::Relation
       schema :podcasts, infer: true do
         attribute :image_data, ROM::Types::Coercible::JSON
+
+        associations do
+          has_many :episodes
+          has_many :profiles, through: :podcast_hosts, as: :hosts
+        end
       end
     end
   end
