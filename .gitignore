@@ -1,4 +1,4 @@
-db/dumps
-db/spaces
+db/
+db/
 
 /certs/*
