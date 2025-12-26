@@ -367,6 +367,7 @@ DEPENDENCIES
   hanami-validations (~> 2.3.0)
   hanami-view (~> 2.3.0)
   hanami-webconsole (~> 2.3.0)
+  pry
   puma
   rack-test
   rake
