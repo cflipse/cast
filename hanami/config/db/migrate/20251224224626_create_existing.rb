@@ -11,7 +11,7 @@ ROM::SQL.migration do
       column :slug, :text, null: false, collate: :nocase, index: true
       column :description, :text
       column :explicit, :boolean, null: false, default: false
-      column :image_data, :jsonb
+      column :image_data, :jsonb, null: false, default: "{}"
       column :tagline, :text
 
       column :created_at, :datetime, null: false
@@ -54,7 +54,7 @@ ROM::SQL.migration do
       column :number, Integer
       column :season, Integer
       column :description, :text
-      column :audio_data, :jsonb
+      column :audio_data, :jsonb, default: "{}", null: false
       column :show_notes, :text
       column :explicit, :boolean, null: false, default: false
 

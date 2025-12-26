@@ -5,7 +5,7 @@ CREATE TABLE `podcasts`(
   `slug` text COLLATE nocase NOT NULL,
   `description` text,
   `explicit` boolean DEFAULT(0) NOT NULL,
-  `image_data` jsonb,
+  `image_data` jsonb DEFAULT('{}') NOT NULL,
   `tagline` text,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL
@@ -45,7 +45,7 @@ CREATE TABLE `episodes`(
   `number` integer,
   `season` integer,
   `description` text,
-  `audio_data` jsonb,
+  `audio_data` jsonb DEFAULT('{}') NOT NULL,
   `show_notes` text,
   `explicit` boolean DEFAULT(0) NOT NULL,
   `published` datetime NULL,
