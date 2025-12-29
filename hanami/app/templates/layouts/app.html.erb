@@ -8,7 +8,23 @@
     <%= stylesheet_tag "app" %>
   </head>
   <body>
-    <%= yield %>
+
+    <header>
+      <h1><%= link_to "cast.athas.org", "/" %></h1>
+
+      <nav id="sitenav">
+        <%= link_to "burnt world of athas", "https://athas.org" %>
+        <%= link_to "arena", "https://arena.athas.org" %>
+        <%= link_to "podcasts", routes.path(:root) %>
+        <%= link_to "profiles", "#" %>
+      </nav>
+    </header>
+
+
+    <main>
+      <%= yield %>
+    </main>
+
     <%= javascript_tag "app" %>
   </body>
 </html>
