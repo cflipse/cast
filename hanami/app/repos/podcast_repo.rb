@@ -6,6 +6,7 @@ module Casts
       def create(attrs)
         attrs = attrs.transform_keys(&:to_sym)
 
+        attrs[:uuid] ||= SecureRandom.uuid
         attrs[:created_at] ||= Time.now
         attrs[:updated_at] ||= Time.now
 
