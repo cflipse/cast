@@ -11,6 +11,8 @@ module Casts
 
         podcasts.changeset(:create, attrs).commit
       end
+
+      def by_uuid(uuid) = podcasts.where(uuid:).one!
     end
   end
 end

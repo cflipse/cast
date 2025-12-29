@@ -6,7 +6,8 @@ ROM::SQL.migration do
   # See https://guides.hanamirb.org/v2.2/database/migrations/ for details.
   change do
     create_table :podcasts do
-      column :id, "varchar(36)", null: false, primary_key: true, unique: true
+      primary_key :id
+      column :uuid, "varchar(36)", null: false, unique: true, index: true
       column :name, :text, null: false, collate: :nocase
       column :slug, :text, null: false, collate: :nocase, index: true
       column :description, :text
@@ -19,7 +20,8 @@ ROM::SQL.migration do
     end
 
     create_table :profiles do
-      column :id, "varchar(36)", null: false, primary_key: true, unique: true
+      primary_key :id
+      column :uuid, "varchar(36)", null: false, index: true, unique: true
       column :login, :text, null: false, collate: :nocase, index: true
       column :email, :text, null: false, collate: :nocase, index: true
 
@@ -37,9 +39,10 @@ ROM::SQL.migration do
     end
 
     create_table :podcast_hosts do
-      column :id, "varchar(36)", null: false, primary_key: true, unique: true
-      foreign_key :profile_id, :profiles, type: "varchar(36)", null: false, index: true
-      foreign_key :podcast_id, :podcasts, type: "varchar(36)", null: false, index: true
+      primary_key :id
+      column :uuid, "varchar(36)", null: false, index: true, unique: true
+      foreign_key :profile_id, :profiles, type: "varchar(36)", null: false, index: true, key: :uuid
+      foreign_key :podcast_id, :podcasts, type: "varchar(36)", null: false, index: true, key: :uuid
 
       column :state, String, collate: :nocase
       column :created_at, :datetime, null: false
@@ -47,8 +50,9 @@ ROM::SQL.migration do
     end
 
     create_table :episodes do
-      column :id, "varchar(36)", null: false, primary_key: true, unique: true
-      foreign_key :podcast_id, :podcasts, type: "varchar(36)", null: false, index: true
+      primary_key :id
+      column :uuid, "varchar(36)", null: false, index: true, unique: true
+      foreign_key :podcast_id, :podcasts, type: "varchar(36)", null: false, index: true, key: :uuid
 
       column :name, String, null: false, collate: :nocase
       column :number, Integer

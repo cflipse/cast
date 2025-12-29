@@ -4,10 +4,10 @@ RSpec.describe Casts::Relations::Podcasts, :db do
   it "roundtrips image_data as JSON" do
     image_data = { "url" => "http://example.com/image.png", "width" => 600, "height" => 600 }
 
-    id = SecureRandom.uuid
+    uuid = SecureRandom.uuid
 
     podcasts.command(:create).call(
-      id:,
+      uuid:,
       image_data:,
       name: "Test Podcast",
       slug: "test",
@@ -15,6 +15,6 @@ RSpec.describe Casts::Relations::Podcasts, :db do
       updated_at: Time.now
     )
 
-    expect(podcasts.by_pk(id).one[:image_data]).to eq image_data
+    expect(podcasts.by_uuid(uuid).one[:image_data]).to eq image_data
   end
 end

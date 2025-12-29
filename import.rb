@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'bundler/inline'
+require "bundler/inline"
 require "json"
 
 gemfile do
@@ -10,31 +10,30 @@ gemfile do
   gem "pry"
 end
 
-
-production = Sequel.connect ENV['PROD_DB'] + "/casts_production"
-development = Sequel.connect "sqlite://hanami/db/casts.sqlite"
+production = Sequel.connect ENV["PROD_DB"] + "/casts_production"
+development = Sequel.connect "sqlite://#{__dir__}/hanami/db/casts.sqlite"
 
 development[:podcast_hosts].truncate
 development[:profiles].truncate
 development[:podcasts].truncate
 development[:episodes].truncate
 
-production[:profiles].each do |profile|
-  profile[:roles] = JSON.dump profile[:roles].gsub(/[{}"]/, '').split(',').reject(&:empty?)
+development.transaction do
+  production[:profiles].all.each do |profile|
+    profile[:roles] = JSON.dump profile[:roles].gsub(/[{}"]/, "").split(",").reject(&:empty?)
+    profile[:uuid] = profile.delete :id
+  end.then { pp it }.then { development[:profiles].multi_insert it }
 
-  development[:profiles].insert profile
-end
+  production[:podcasts].all.each do |podcast|
+    podcast[:uuid] = podcast.delete :id
+  end.then { development[:podcasts].multi_insert it }
 
-production[:podcasts].each do |podcast|
-  development[:podcasts].insert podcast
-end
+  production[:podcast_hosts].all.each do |ph|
+    ph[:uuid] = ph.delete :id
+  end.then { development[:podcast_hosts].multi_insert it }
 
-production[:podcast_hosts].each do |host|
-  development[:podcast_hosts].insert host
-end
-
-production[:episodes].each do |episode|
-  episode[:slugs] = JSON.dump episode[:slugs].gsub(/[{}"]/, '').split(',').reject(&:empty?)
-
-  development[:episodes].insert episode
+  production[:episodes].all.each do |episode|
+    episode[:slugs] = JSON.dump episode[:slugs].gsub(/[{}"]/, "").split(",").reject(&:empty?)
+    episode[:uuid] = episode.delete :id
+  end.then { development[:episodes].multi_insert it }
 end
