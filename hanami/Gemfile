@@ -16,6 +16,8 @@ gem "puma"
 gem "rake"
 gem "sqlite3"
 
+gem "kramdown"
+
 group :development do
   gem "hanami-webconsole", "~> 2.3.0"
 end
