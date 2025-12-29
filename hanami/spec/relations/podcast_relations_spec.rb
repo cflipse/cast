@@ -6,7 +6,7 @@ RSpec.describe Casts::Relations::Podcasts, :db do
 
     id = SecureRandom.uuid
 
-    podcasts.insert(
+    podcasts.command(:create).call(
       id:,
       image_data:,
       name: "Test Podcast",
