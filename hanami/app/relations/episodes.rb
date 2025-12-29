@@ -6,6 +6,7 @@ module Casts
       schema :episodes, infer: true do
         attribute :audio_data, ROM::Types::Coercible::JSON
         attribute :slugs, ROM::Types::Coercible::JSON
+        attribute :explicit, Types::Params::Bool.default { false }
 
         associations do
           belongs_to :podcast

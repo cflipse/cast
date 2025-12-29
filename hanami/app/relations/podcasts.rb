@@ -5,6 +5,7 @@ module Casts
     class Podcasts < Casts::DB::Relation
       schema :podcasts, infer: true do
         attribute :image_data, ROM::Types::Coercible::JSON
+        attribute :explicit, Types::Params::Bool.default { false }
 
         associations do
           has_many :episodes

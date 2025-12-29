@@ -3,7 +3,7 @@
 module Casts
   module Repos
     class PodcastRepo < Casts::DB::Repo
-      def create(attrs)
+      def create attrs
         attrs = attrs.transform_keys(&:to_sym)
 
         attrs[:uuid] ||= SecureRandom.uuid
