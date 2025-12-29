@@ -32,6 +32,8 @@ end
 
 group :cli, :development, :test do
   gem "hanami-rspec", "~> 2.3.0"
+
+  gem "rom-factory"
 end
 
 group :test do
