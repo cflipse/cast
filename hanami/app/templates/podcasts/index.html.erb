@@ -1,0 +1,9 @@
+<% podcasts.each do |podcast| %>
+  <article class="podcast" id="podcast-<%= podcast.slug %>">
+    <header>
+      <h2><%= podcast.name %></h2>
+    </header>
+  </article>
+
+  <%= podcast.description %>
+<% end %>

@@ -14,6 +14,8 @@ module Casts
       end
 
       def by_uuid(uuid) = podcasts.where(uuid:).one!
+
+      def all = podcasts.order(:name).to_a
     end
   end
 end
