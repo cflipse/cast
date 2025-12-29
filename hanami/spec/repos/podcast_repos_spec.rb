@@ -1,5 +1,4 @@
-RSpec.describe Casts::Repos::PodcastRepo, :db do 
-
+RSpec.describe Casts::Repos::PodcastRepo, :db do
   subject(:repo) { Hanami.app["repos.podcast_repo"] }
   let(:podcasts) { Hanami.app["relations.podcasts"] }
 
@@ -9,9 +8,8 @@ RSpec.describe Casts::Repos::PodcastRepo, :db do
     id = SecureRandom.uuid
 
     repo.create(id:, image_data:,
-      name: "Test Podcast",
-      slug: "test",
-    )
+                name: "Test Podcast",
+                slug: "test")
 
     expect(podcasts.by_pk(id).one[:image_data]).to eq image_data
   end

@@ -3,7 +3,6 @@
 module Casts
   module Repos
     class PodcastRepo < Casts::DB::Repo
-
       def create(attrs)
         attrs = attrs.transform_keys(&:to_sym)
 

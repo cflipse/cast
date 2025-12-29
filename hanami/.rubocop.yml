@@ -19,3 +19,9 @@ Style/FrozenStringLiteralComment:
 
 Style/IfUnlessModifier:
   Enabled: false
+
+Layout/ArgumentAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma

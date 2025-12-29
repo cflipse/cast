@@ -1,5 +1,4 @@
-RSpec.describe Casts::Relations::Podcasts, :db do 
-
+RSpec.describe Casts::Relations::Podcasts, :db do
   subject(:podcasts) { Hanami.app["relations.podcasts"] }
 
   it "roundtrips image_data as JSON" do
@@ -13,11 +12,9 @@ RSpec.describe Casts::Relations::Podcasts, :db do
       name: "Test Podcast",
       slug: "test",
       created_at: Time.now,
-      updated_at: Time.now,
+      updated_at: Time.now
     )
 
     expect(podcasts.by_pk(id).one[:image_data]).to eq image_data
   end
-
-
 end
