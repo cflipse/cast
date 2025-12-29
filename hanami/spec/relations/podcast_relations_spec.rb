@@ -6,14 +6,8 @@ RSpec.describe Casts::Relations::Podcasts, :db do
 
     uuid = SecureRandom.uuid
 
-    podcasts.command(:create).call(
-      uuid:,
-      image_data:,
-      name: "Test Podcast",
-      slug: "test",
-      created_at: Time.now,
-      updated_at: Time.now
-    )
+    podcasts.command(:create)
+      .call Factory.build(:podcast, uuid:, image_data:).to_h
 
     expect(podcasts.by_uuid(uuid).one[:image_data]).to eq image_data
   end

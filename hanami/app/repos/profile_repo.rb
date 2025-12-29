@@ -3,7 +3,7 @@
 module Casts
   module Repos
     class ProfileRepo < Casts::DB::Repo
-      def create(attrs)
+      def create attrs
         attrs[:uuid] ||= SecureRandom.uuid
         attrs[:created_at] ||= Time.now.utc
         attrs[:updated_at] ||= Time.now.utc
