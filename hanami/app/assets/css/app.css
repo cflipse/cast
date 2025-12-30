@@ -1,22 +1,53 @@
 :root { 
   --header-color: #9c0000;
+  --sand: #dec897;
 }
 
 body {
+  background: #000 url('../images/papyrus_map.png') no-repeat center top;
+  font-family: sans-serif;
+
+  margin-inline: auto;
+  padding-inline: 1rem;
+  max-width: 50rem;
+
+  display: flex;
+  flex-direction: column;
+}
+
+body > main {
   background-color: #fff;
   color: #000;
-  font-family: sans-serif;
+  padding-inline: 1rem;
 }
 
 body > header {
   h1 {
+    /* Align text to the bottom of the header block */
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+
+    margin: 0;
     color: var(--header-color);
+
     font-family: "Packard Antique", serif;
+    text-shadow: 2px 2px 0.1em #000;
+    font-size: 3rem;
+    font-weight: 700;
+
+    background: url('../images/ds_logo_crop.png') no-repeat right bottom;
+    min-height: 100px;
 
     a {
       color: var(--header-color);
       text-decoration: none;
       :visited { color: var(--header-color); }
     }
+  }
+
+  nav {
+    background: var(--sand);
+    padding: 0.5rem;
   }
 }
