@@ -1,5 +1,22 @@
+:root { 
+  --header-color: #9c0000;
+}
+
 body {
   background-color: #fff;
   color: #000;
   font-family: sans-serif;
+}
+
+body > header {
+  h1 {
+    color: var(--header-color);
+    font-family: "Packard Antique", serif;
+
+    a {
+      color: var(--header-color);
+      text-decoration: none;
+      :visited { color: var(--header-color); }
+    }
+  }
 }
