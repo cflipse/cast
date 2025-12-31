@@ -1,9 +1,15 @@
 <% podcasts.each do |podcast| %>
+
   <article class="podcast" id="podcast-<%= podcast.slug %>">
+    <%= image_tag podcast.image.url, alt: "#{podcast.name} cover" %>
+    <section>
+
     <header>
       <h2><%= podcast.name %></h2>
     </header>
+
+    <%= podcast.description %>
+    </section>
   </article>
 
-  <%= podcast.description %>
 <% end %>
