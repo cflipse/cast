@@ -10,5 +10,8 @@ module Casts
     setting :s3_region, constructor: Types::String
     setting :s3_access_key_id, constructor: Types::String
     setting :s3_secret_access_key, constructor: Types::String
+    setting :s3_endpoint, constructor: Types::String
+
+    setting :spaces_host, constructor: Types::String
   end
 end

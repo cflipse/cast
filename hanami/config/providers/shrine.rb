@@ -11,6 +11,7 @@ Hanami.app.register_provider(:shrine) do
       region: target["settings"].s3_region,
       access_key_id: target["settings"].s3_access_key_id,
       secret_access_key: target["settings"].s3_secret_access_key,
+      endpoint: target["settings"].s3_endpoint,
     }
 
     Shrine.storages = {
