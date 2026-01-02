@@ -11,6 +11,7 @@ Hanami.app.register_provider(:shrine) do
       region: target["settings"].s3_region,
       access_key_id: target["settings"].s3_access_key_id,
       secret_access_key: target["settings"].s3_secret_access_key,
+      force_path_style: true,
       endpoint: target["settings"].s3_endpoint,
     }
 
@@ -33,7 +34,7 @@ Hanami.app.register_provider(:shrine) do
     Shrine.plugin :validation_helpers
     Shrine.plugin :type_predicates
 
-    Shrine.plugin :url_options, store: { public: true, host: ENV.fetch("SPACES_HOST", nil) }
+    Shrine.plugin :url_options, store: { public: true, host: target["settings"].spaces_host }
 
     register :shrine, Shrine
   end

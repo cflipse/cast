@@ -78,7 +78,7 @@ services:
       - ./certs:/root/certs
     command: server /data --console-address ":9001"
     ports:
-      - 9002:9000
+      - 127.0.0.1:9002:9000
       - 9001
 
 volumes:
