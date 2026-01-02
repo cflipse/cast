@@ -21,7 +21,7 @@ mcli alias set cast-minio http://${MINIO_ADDRESS} ${MINIO_ROOT_USER} ${MINIO_ROO
 cp /etc/letsencrypt/live/dev.athas.org/privkey.pem certs/private.key
 cp /etc/letsencrypt/live/dev.athas.org/fullchain.pem certs/public.crt
 
-mcli mb cast-minio/casts/development;
-mcli anonymous set public cast-minio/casts/development;
+mcli mb cast-minio/casts;
+mcli anonymous set public cast-minio/casts/;
 
-mcli cp  ./db/spaces/casts/ cast-minio/casts/ --recursive
+mcli mirror  ./db/spaces/casts/* cast-minio/casts/development/
