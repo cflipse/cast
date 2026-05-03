@@ -14,7 +14,6 @@ echo "mirroring cast files"
 mkdir -p db/spaces/casts/development/
 mcli mirror spaces/casts/files/ db/spaces/casts/development
 
-
 echo "upload to local minio"
 mcli alias set cast-minio http://${MINIO_ADDRESS} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
 

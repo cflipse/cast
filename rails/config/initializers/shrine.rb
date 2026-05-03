@@ -9,9 +9,9 @@ spaces_creds = Rails.application.credentials.spaces.then do |spaces|
     access_key_id: ENV.fetch("SPACES_ACCESS_KEY_ID", spaces[:access_key_id]),
     secret_access_key: ENV.fetch("SPACES_SECRET_ACCESS_KEY", spaces[:secret_access_key]),
     endpoint: ENV.fetch("SPACES_ENDPOINT", spaces[:endpoint]),
-    force_path_style: spaces[:force_path_style],
-    bucket: spaces[:bucket],
-    region: spaces[:region]
+    force_path_style: ENV.fetch("SPACES_FORCE_PATH_STYLE", spaces[:force_path_style].to_s) == "true",
+    bucket: ENV.fetch("SPACES_BUCKET", spaces[:bucket]),
+    region: ENV.fetch("SPACES_REGION", spaces[:region])
   }
 end
 
