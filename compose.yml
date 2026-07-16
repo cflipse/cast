@@ -79,7 +79,25 @@ services:
       - 127.0.0.1:9002:9000
       - 9001
 
+  seaweed:
+    image: chrislusf/seaweedfs
+    ports:
+      - "8334:8333"
+    volumes:
+      - seaweed:/data
+    command: mini
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8333/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      AWS_ACCESS_KEY_ID: ASDF123456
+      AWS_SECRET_ACCESS_KEY: RANDOMHASH7899
+
+
 volumes:
   minio:
   castdb:
   redis:
+  seaweed:
