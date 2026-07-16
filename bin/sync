@@ -1,26 +1,7 @@
-# start a server with
-#  nohup minio server ./data --console-adress ":9001" --certs-dir=./certs
+#!/bin/bash
 
-if [ -f .env.development ]; then source .env.development ; fi
-if [ -f rails/.env.development ]; then source rails/.env.development ; fi
-if [ -f .env ]; then source .env ; fi
+# Mirrors production files
 
-if [ -z "${MINIO_ADDRESS}" ]; then
-  echo "No MINIO server found";
-  exit 1;
-fi
-
-echo "mirroring cast files"
-mkdir -p db/spaces/casts/development/
+echo "mirroring cast"
+mkdir -p ./db/spaces/casts/development
 mcli mirror spaces/casts/files/ db/spaces/casts/development
-
-echo "upload to local minio"
-mcli alias set cast-minio http://${MINIO_ADDRESS} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-
-cp /etc/letsencrypt/live/dev.athas.org/privkey.pem certs/private.key
-cp /etc/letsencrypt/live/dev.athas.org/fullchain.pem certs/public.crt
-
-mcli mb cast-minio/casts;
-mcli anonymous set public cast-minio/casts/;
-
-mcli mirror  ./db/spaces/casts/* cast-minio/casts/development/

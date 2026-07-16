@@ -95,6 +95,20 @@ services:
       AWS_ACCESS_KEY_ID: ASDF123456
       AWS_SECRET_ACCESS_KEY: RANDOMHASH7899
 
+  seaweed-init:
+    image: amazon/aws-cli
+    depends_on:
+      seaweed:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: /bin/sh
+    command: /app/bin/seaweed-init
+    environment:
+      AWS_ACCESS_KEY_ID: ASDF123456
+      AWS_SECRET_ACCESS_KEY: RANDOMHASH7899
+    volumes:
+      - ./bin/seaweed-init:/app/bin/seaweed-init:ro
+      - ./db/spaces/casts:/db/spaces/casts:ro
 
 volumes:
   minio:
