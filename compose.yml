@@ -21,10 +21,11 @@ services:
     command: "bin/rails server"
     depends_on:
       castdb: *healthy
+      seaweed-init: *started
     links:
       - castdb
       - vite
-      - minio
+      - seaweed
     volumes:
       - ./rails:/srv/cast
     healthcheck:
@@ -32,8 +33,8 @@ services:
     ports:
       - 6700:6700
     environment:
-      SPACES_ENDPOINT: http://minio:9000/
-      SPACES_HOST: http://localhost:9002/casts/
+      SPACES_ENDPOINT: http://seaweed:8334/
+      SPACES_HOST: http://seaweed:8334/casts/
       CASTS_DB: postgresql://bwoa:rikus@castdb:5432
       VITE_RUBY_HOST: vite
 
