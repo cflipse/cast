@@ -20,13 +20,13 @@ fi
 
 aws="aws --endpoint-url $SEAWEED_ENDPOINT --region nyc1"
 
-$aws s3 mb s3://development 2>/dev/null || true
-$aws s3api put-bucket-acl --bucket development --acl public-read
+$aws s3 mb s3://casts 2>/dev/null || true
+$aws s3api put-bucket-acl --bucket casts --acl public-read
 
-if $aws s3 ls s3://development/ --recursive 2>/dev/null | grep -q .; then
-  echo "bwoa-development already seeded, skipping."
+if $aws s3 ls s3://casts/development/ --recursive 2>/dev/null | grep -q .; then
+  echo "casts already seeded, skipping."
 else
-  echo "First run: seeding bwoa-development from $SEED_DIR..."
-  $aws s3 sync "$SEED_DIR/" s3://development/
+  echo "First run: seeding casts from $SEED_DIR..."
+  $aws s3 sync "$SEED_DIR/" s3://casts/
   echo "Seed complete."
 fi
