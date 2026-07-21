@@ -13,12 +13,7 @@ env:
 
 # Credentials for your image host.
 registry:
-  server: registry.digitalocean.com
-  username: cflipse@gmail.com
-
-  # Always use an access token rather than real password when possible.
-  password:
-    - KAMAL_REGISTRY_PASSWORD
+  server: localhost:5555
 
 # Configure builder setup.
 builder:
