@@ -25,7 +25,16 @@ proxy:
     path: /
     interval: 5
 
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "ash"
+  logs: app logs -f
+  db: app exec --interactive --reuse "bin/rails dbconsole --include-password"
+
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
 asset_path: /srv/cast/public/vite
+
+volumes:
+  - /storage/cast:/srv/cast/storage

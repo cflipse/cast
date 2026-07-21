@@ -11,3 +11,20 @@ env:
   clear:
     RAILS_ENV: production
     OMNIAUTH_REDIRECT_URI: "https://cast.athas.org/auth/google_oauth2/callback"
+
+accessories:
+  litestream:
+    image: litestream/litestream:0.5
+    roles:
+      - web
+    env:
+      clear:
+        RAILS_ENV: production
+      secret:
+        - LITESTREAM_ACCESS_KEY_ID
+        - LITESTREAM_SECRET_ACCESS_KEY
+    cmd: "replicate"
+    files:
+      - config/litestream.yml:/etc/litestream.yml
+    volumes:
+      - /storage/cast:/data

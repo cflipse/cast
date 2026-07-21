@@ -1,0 +1,9 @@
+access-key-id: $LITESTREAM_ACCESS_KEY_ID
+secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
+
+dbs:
+  - dir: /data
+    pattern: "*.sqlite3"
+    recursive: true
+    replica:
+      url: s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/${RAILS_ENV}/cast
