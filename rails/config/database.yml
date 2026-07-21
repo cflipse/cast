@@ -24,6 +24,14 @@ test:
   prepared_statements: false
 
 production:
-  <<: *default
-  url: <%= ENV.fetch("CASTS_DB") { Rails.application.credentials.casts_db_url } %>
-  prepared_statements: false
+  primary:
+    <<: *default
+    url: <%= ENV.fetch("CASTS_DB") { Rails.application.credentials.casts_db_url } %>
+    prepared_statements: false
+
+  sqlite:
+    adapter: sqlite3
+    database: storage/cast.sqlite3
+    migrations_paths: db/sqlite_migrate
+    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    timeout: 5000
