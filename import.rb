@@ -12,10 +12,12 @@ end
 
 rails_dir = File.join(__dir__, "rails")
 
-castdb_port = `docker compose --project-directory #{__dir__} port castdb 5432`.strip.lines.first.to_s.strip.split(":").last
-raise "castdb isn't running (docker compose up -d castdb)" if castdb_port.to_s.empty?
+castdb_url = ENV.fetch "CASTDB_URL" do
+  address = `docker compose --project-directory #{__dir__} port castdb 5432`.strip
+  raise "castdb isn't running (docker compose up -d castdb)" if address.to_s.empty?
 
-castdb_url = ENV.fetch("CASTDB_URL") { "postgres://bwoa:rikus@localhost:#{castdb_port}/casts_development" }
+  "postgres://bwoa:rikus@#{address}/casts_development"
+end
 
 # Assumes rails/db/sqlite_migrate has already been run (bin/rails db:migrate:sqlite)
 # against rails/storage/development_sqlite.sqlite3.
