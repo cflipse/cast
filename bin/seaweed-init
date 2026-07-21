@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+# Endpoint: explicit env > docker compose port (host) > in-container default
+if [ -z "$SEAWEED_ENDPOINT" ]; then
+  _host=$(docker compose port seaweed 8333 2>/dev/null || true)
+  SEAWEED_ENDPOINT="${_host:+http://$_host}"
+  SEAWEED_ENDPOINT="${SEAWEED_ENDPOINT:-http://seaweed:8333}"
+fi
+
+# Seed dir: explicit env > relative to this script (host) > in-container default
+if [ -z "$SEED_DIR" ]; then
+  _candidate="$(cd "$(dirname "$0")/.." && pwd)/db/spaces/casts"
+  if [ -d "$_candidate" ]; then
+    SEED_DIR="$_candidate"
+  else
+    SEED_DIR="/db/spaces/casts"
+  fi
+fi
+
+aws="aws --endpoint-url $SEAWEED_ENDPOINT --region nyc1"
+
+$aws s3 mb s3://casts 2>/dev/null || true
+$aws s3api put-bucket-acl --bucket casts --acl public-read
+
+if $aws s3 ls s3://casts/development/ --recursive 2>/dev/null | grep -q .; then
+  echo "casts already seeded, skipping."
+else
+  echo "First run: seeding casts from $SEED_DIR..."
+  $aws s3 sync "$SEED_DIR/" s3://casts/
+  echo "Seed complete."
+fi
