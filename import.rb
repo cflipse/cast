@@ -3,14 +3,14 @@
 require "bundler/inline"
 require "json"
 
-gemfile do
+gemfile(true) do
   gem "sequel"
   gem "pg"
   gem "sqlite3"
   gem "pry"
 end
 
-production = Sequel.connect ENV["PROD_DB"] + "/casts_production"
+production = Sequel.connect ENV["PROD_DB"]
 development = Sequel.connect "sqlite://#{__dir__}/hanami/db/casts.sqlite"
 
 development[:podcast_hosts].truncate
