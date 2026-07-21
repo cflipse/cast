@@ -1,6 +1,4 @@
 ---
-version: "3"
-
 x-conditions:
   healthy: &healthy
     condition: service_healthy
