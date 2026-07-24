@@ -4,7 +4,7 @@
 require "bundler/inline"
 require "json"
 
-gemfile(true) do
+gemfile do
   source 'https://rubygems.org'
   gem "sequel"
   gem "pg"

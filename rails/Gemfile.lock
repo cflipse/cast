@@ -418,6 +418,8 @@ GEM
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
+    sequel (5.106.0)
+      bigdecimal
     shrine (3.9.0)
       content_disposition (~> 1.0)
       down (~> 5.1)
@@ -519,6 +521,7 @@ DEPENDENCIES
   selenium-webdriver
   sentry-rails
   sentry-ruby
+  sequel
   shrine
   sqlite3
   standard
