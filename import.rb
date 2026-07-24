@@ -5,6 +5,7 @@ require "bundler/inline"
 require "json"
 
 gemfile(true) do
+  source 'https://rubygems.org'
   gem "sequel"
   gem "pg"
   gem "sqlite3"
@@ -12,7 +13,7 @@ end
 
 rails_dir = File.join(__dir__, "rails")
 
-castdb_url = ENV.fetch "CASTDB_URL" do
+castdb_url = ENV.fetch "CASTS_DB" do
   address = `docker compose --project-directory #{__dir__} port castdb 5432`.strip
   raise "castdb isn't running (docker compose up -d castdb)" if address.to_s.empty?
 
