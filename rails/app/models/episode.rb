@@ -22,7 +22,11 @@ class Episode < ApplicationRecord
   }
 
   scope :by_slug, ->(slug) {
-    where("slugs @> ?", "{#{slug}}")
+    if connection.adapter_name == "SQLite"
+      where("EXISTS (SELECT 1 FROM json_each(slugs) WHERE value = ?)", slug)
+    else
+      where("slugs @> ?", "{#{slug}}")
+    end
   }
 
   def slug

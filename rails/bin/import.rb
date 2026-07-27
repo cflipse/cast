@@ -22,7 +22,7 @@ production = Sequel.connect castdb_url
 production.extension :pg_array, :pg_json
 production.register_array_type :citext, scalar_typecast: :string
 
-development = Sequel.connect "sqlite://#{rails_dir}/storage/development_sqlite.sqlite3"
+development = Sequel.connect "sqlite://#{rails_dir}/storage/cast.sqlite3"
 
 development[:podcast_hosts].truncate
 development[:episodes].truncate

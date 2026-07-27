@@ -1,3 +1,7 @@
 eval $(direnv export bash)
 
 pg_dump --no-owner --role=bwoa -x $PROD_DB/casts_production > db/dumps/casts.sql
+
+echo "updating cast sqlite"
+rm -rf rails/storage/cast_development.sqlite3
+litestream restore -o rails/storage/cast_development.sqlite3 s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/production/cast/cast.sqlite3
