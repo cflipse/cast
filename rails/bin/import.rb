@@ -1,59 +1,58 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "bundler/inline"
-require "json"
+# Run with: bin/rails runner bin/import.rb
+# Assumes db:migrate:sqlite has been run against storage/development_sqlite.sqlite3
 
-gemfile do
-  source 'https://rubygems.org'
-  gem "sequel"
-  gem "pg"
-  gem "sqlite3"
+class SqliteRecord < ApplicationRecord
+  self.abstract_class = true
+  connects_to database: { writing: :sqlite, reading: :sqlite }
 end
 
-rails_dir = File.join(__dir__, "rails")
-
-castdb_url = ENV.fetch "CASTS_DB" do
-  address = `docker compose --project-directory #{__dir__} port castdb 5432`.strip
-  raise "castdb isn't running (docker compose up -d castdb)" if address.to_s.empty?
-
-  "postgres://bwoa:rikus@#{address}/casts_development"
+class SqliteProfile < SqliteRecord
+  self.table_name = "profiles"
 end
 
-# Assumes rails/db/sqlite_migrate has already been run (bin/rails db:migrate:sqlite)
-# against rails/storage/development_sqlite.sqlite3.
+class SqlitePodcast < SqliteRecord
+  self.table_name = "podcasts"
+end
 
-production = Sequel.connect castdb_url
-production.extension :pg_array, :pg_json
-production.register_array_type :citext, scalar_typecast: :string
+class SqlitePodcastHost < SqliteRecord
+  self.table_name = "podcast_hosts"
+end
 
-development = Sequel.connect "sqlite://#{rails_dir}/storage/development_sqlite.sqlite3"
+class SqliteEpisode < SqliteRecord
+  self.table_name = "episodes"
+end
 
-development[:podcast_hosts].truncate
-development[:episodes].truncate
-development[:profiles].truncate
-development[:podcasts].truncate
+to_array = ->(val) { JSON.dump(Array(val).reject { _1.to_s.empty? }) }
+to_object = ->(val) { val && JSON.dump(val) }
 
-clean_array = ->(array) { JSON.dump array.to_a.reject(&:empty?) }
-clean_json = ->(hash) { hash && JSON.dump(hash.to_h) }
+# Truncate in FK-safe order
+[SqlitePodcastHost, SqliteEpisode].each(&:delete_all)
+[SqlitePodcast, SqliteProfile].each(&:delete_all)
 
-development.transaction do
-  profiles = production[:profiles].all.each do |profile|
-    profile[:roles] = clean_array.call(profile[:roles])
+source = ApplicationRecord.connection
+
+SqliteRecord.transaction do
+  profiles = source.select_all("SELECT * FROM profiles").map do |row|
+    row.merge("roles" => to_array.call(row["roles"]))
   end
-  development[:profiles].multi_insert profiles
+  SqliteProfile.insert_all(profiles) if profiles.any?
 
-  podcasts = production[:podcasts].all.each do |podcast|
-    podcast[:image_data] = clean_json.call(podcast[:image_data])
+  podcasts = source.select_all("SELECT * FROM podcasts").map do |row|
+    row.merge("image_data" => to_object.call(row["image_data"]))
   end
-  development[:podcasts].multi_insert podcasts
+  SqlitePodcast.insert_all(podcasts) if podcasts.any?
 
-  podcast_hosts = production[:podcast_hosts].all
-  development[:podcast_hosts].multi_insert podcast_hosts
+  podcast_hosts = source.select_all("SELECT * FROM podcast_hosts").to_a
+  SqlitePodcastHost.insert_all(podcast_hosts) if podcast_hosts.any?
 
-  episodes = production[:episodes].all.each do |episode|
-    episode[:slugs] = clean_array.call(episode[:slugs])
-    episode[:audio_data] = clean_json.call(episode[:audio_data])
+  episodes = source.select_all("SELECT * FROM episodes").map do |row|
+    row.merge(
+      "slugs" => to_array.call(row["slugs"]),
+      "audio_data" => to_object.call(row["audio_data"])
+    )
   end
-  development[:episodes].multi_insert episodes
+  SqliteEpisode.insert_all(episodes) if episodes.any?
 end
