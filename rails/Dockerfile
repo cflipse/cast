@@ -8,7 +8,6 @@ RUN apk add --no-cache \
   ca-certificates \
   file \
   curl \
-  graphicsmagick \
   tzdata \
   taglib \
   yaml \

@@ -257,12 +257,6 @@ GEM
     omniauth-rails_csrf_protection (2.0.1)
       actionpack (>= 4.2)
       omniauth (~> 2.0)
-    paper_trail (17.0.0)
-      activerecord (>= 7.1)
-      request_store (~> 1.4)
-    paper_trail-globalid (0.2.0)
-      globalid
-      paper_trail (>= 3.0.0)
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -343,8 +337,6 @@ GEM
     regexp_parser (2.12.0)
     reline (0.6.3)
       io-console (~> 0.5)
-    request_store (1.7.0)
-      rack (>= 1.4)
     rexml (3.4.4)
     rspec-core (3.13.6)
       rspec-support (~> 3.13.0)
@@ -416,8 +408,6 @@ GEM
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
-    sequel (5.106.0)
-      bigdecimal
     shrine (3.9.0)
       content_disposition (~> 1.0)
       down (~> 5.1)
@@ -501,8 +491,6 @@ DEPENDENCIES
   omniauth (= 2.1.1)
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
-  paper_trail
-  paper_trail-globalid
   pry
   puma
   pundit
@@ -518,7 +506,6 @@ DEPENDENCIES
   selenium-webdriver
   sentry-rails
   sentry-ruby
-  sequel
   shrine
   sqlite3
   standard
