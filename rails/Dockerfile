@@ -9,7 +9,6 @@ RUN apk add --no-cache \
   file \
   curl \
   graphicsmagick \
-  postgresql \
   tzdata \
   taglib \
   yaml \
@@ -31,7 +30,6 @@ RUN apk add --no-cache \
   nodejs \
   npm \
   yaml-dev \
-  postgresql-dev \
   taglib-dev
 
 # These take longer to build
@@ -41,7 +39,6 @@ RUN gem install \
   bindex:0.8.1 \
   msgpack:1.8.3 \
   json:2.21.1 \
-  pg:1.6.3 \
   taglib-ruby:2.0.0 \
   websocket-driver:0.8.2 \
   puma:8.0.2
