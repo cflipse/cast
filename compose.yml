@@ -13,18 +13,16 @@ services:
     volumes:
       - redis:/data
 
-  cast:
+  rails:
     build:
       context: rails
       target: development
       dockerfile: Dockerfile
     command: "bin/rails server"
     depends_on:
-      castdb: *healthy
       seaweed-init: *started
     links:
-      - castdb
-      - vite
+      - vite-rails
       - seaweed
     volumes:
       - ./rails:/srv/cast
@@ -35,25 +33,9 @@ services:
     environment:
       SPACES_ENDPOINT: http://seaweed:8333/
       SPACES_HOST: http://localhost:8334/casts/
-      CASTS_DB: postgresql://bwoa:rikus@castdb:5432
       VITE_RUBY_HOST: vite
 
-  castdb:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: bwoa
-      POSTGRES_PASSWORD: rikus
-      POSTGRES_DB: casts_development
-    ports:
-      - 5432
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-U", "bwoa", "-d", "casts_development"]
-      interval: 10s
-    volumes:
-      - castdb:/var/lib/postgresql/data
-      - ./db/dumps/casts.sql:/docker-entrypoint-initdb.d/init.sql
-
-  vite:
+  vite-rails:
     build:
       context: rails
       target: development
@@ -61,8 +43,6 @@ services:
     volumes:
       - ./rails:/srv/cast
     environment:
-      GEM_HOME: /usr/local/castgems/
-      GEM_PATH: /usr/local/castgems:/usr/local/bundle
       VITE_RUBY_HOST: 0.0.0.0
     command: bin/vite dev
 
@@ -98,6 +78,5 @@ services:
       - ./db/spaces/casts:/db/spaces/casts:ro
 
 volumes:
-  castdb:
   redis:
   seaweed:
