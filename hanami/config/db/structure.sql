@@ -78,4 +78,4 @@ CREATE TABLE _litestream_seq(id INTEGER PRIMARY KEY, seq INTEGER);
 CREATE TABLE _litestream_lock(id INTEGER);
 CREATE TABLE `schema_migrations`(`filename` varchar(255) NOT NULL PRIMARY KEY);
 INSERT INTO schema_migrations (filename) VALUES
-;
+('20260728164117_initial.rb');
