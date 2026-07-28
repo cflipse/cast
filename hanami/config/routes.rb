@@ -3,5 +3,6 @@
 module Cast
   class Routes < Hanami::Routes
     # Add your routes here. See https://hanakai.org/learn/hanami/routing/ for details.
+    get "/home", to: "home.index"
   end
 end
