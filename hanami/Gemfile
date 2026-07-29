@@ -18,6 +18,9 @@ gem "puma", ">= 7.1"
 gem "rake"
 gem "sqlite3"
 
+
+gem "bigdecimal", "~> 4.1"
+
 group :development do
   gem "hanami-webconsole", "~> 3.0.0"
 end
