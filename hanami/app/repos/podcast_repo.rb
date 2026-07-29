@@ -7,8 +7,6 @@ module Cast
 
       def create(attributes)
         defaults = {
-          created_at: Time.now,
-          updated_at: Time.now,
           id: SecureRandom.uuid,
         }
 
