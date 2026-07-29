@@ -4,10 +4,10 @@ module Cast
   module Views
     module Home
       class Index < Cast::View
-        include Deps["relations.podcasts"]
+        include Deps["repos.podcast_repo"]
 
         expose :podcasts do
-          podcasts.to_a
+          podcast_repo.by_name
         end
       end
     end

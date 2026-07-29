@@ -2,7 +2,7 @@
 
 RSpec.describe Cast::Actions::Home::Index do
   let(:params) { Hash[] }
-  let(:podcasts) { Cast::App["relations.podcasts"] }
+  let(:podcasts) { Cast::App["repos.podcast_repo"] }
 
   it "works" do
     response = subject.call(params)
@@ -10,22 +10,16 @@ RSpec.describe Cast::Actions::Home::Index do
   end
 
   it "presents all podcasts" do
-    podcasts.insert(
-      id: SecureRandom.uuid,
+    podcasts.create(
       name: "Bone, Stone & Obsidian",
       slug: "bso",
       explicit: false,
-      created_at: Time.now,
-      updated_at: Time.now,
     )
 
-    podcasts.insert(
-      id: SecureRandom.uuid,
+    podcasts.create(
       name: "Fireside with Rajaat",
       slug: "chat",
       explicit: true,
-      created_at: Time.now,
-      updated_at: Time.now,
     )
 
     response = subject.call(params)
