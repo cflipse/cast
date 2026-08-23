@@ -7,4 +7,5 @@ node_modules/
 db/*.sqlite
 db/*.sqlite-wal
 db/*.sqlite-shm
+db/spaces
 spec/examples.txt
