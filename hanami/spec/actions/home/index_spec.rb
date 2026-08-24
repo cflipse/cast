@@ -9,7 +9,7 @@ RSpec.describe Cast::Actions::Home::Index do
     expect(response).to be_successful
   end
 
-  it "presents all podcasts" do
+  it "presents all podcasts", :db do
     podcasts.create(
       name: "Bone, Stone & Obsidian",
       slug: "bso",

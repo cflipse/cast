@@ -14,6 +14,8 @@ module Cast
           defaults.merge(attributes)
         ).commit
       end
+
+      def by_slug(slug) = root.where(slug:).one
     end
   end
 end
