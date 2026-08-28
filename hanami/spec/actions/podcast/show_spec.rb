@@ -1,17 +1,10 @@
 # frozen_string_literal: true
 
 RSpec.describe Cast::Actions::Podcast::Show do
-  let(:params) { Hash[id: "bso"] }
-  let(:podcasts) { Cast::App["repos.podcast_repo"] }
-
   it "works", :db do
-    podcasts.create(
-      name: "Bone, Stone & Obsidian",
-      slug: "bso",
-      explicit: false,
-    )
+    Factory[:podcast, slug: "bso"]
 
-    response = subject.call(params)
+    response = subject.call({id: "bso"})
     expect(response).to be_successful
   end
 end

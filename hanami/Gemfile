@@ -31,6 +31,8 @@ group :development, :test do
   gem "rouge"
 
   gem "pry"
+
+  gem "rom-factory"
 end
 
 group :cli, :development do

@@ -5,11 +5,7 @@ RSpec.feature "/podcasts/:id" do
   let(:podcasts) { Cast::App["repos.podcast_repo"] }
 
   before do
-    podcasts.create(
-      name: "Bone, Stone & Obsidian",
-      slug: "bso",
-      explicit: false,
-    )
+    Factory[:podcast, name: "Bone, Stone & Obsidian"]
   end
 
   it "loads the podcast" do
