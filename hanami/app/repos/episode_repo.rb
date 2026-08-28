@@ -6,6 +6,10 @@ module Cast
       def for_cast(podcast) 
         root.where(podcast_id: podcast[:id])
       end
+
+      def find(id)
+        root.where(id: id).one!
+      end
     end
   end
 end
