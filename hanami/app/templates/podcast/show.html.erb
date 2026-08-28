@@ -1,1 +1,11 @@
 <h1><%= podcast.name %></h1>
+
+<section class="podcast-episodes">
+  <% episodes.each do |episode| %>
+    <article class="episode">
+      <h3><%= episode.name %></h3>
+
+      <%= episode.description %>
+    </article>
+  <% end %>
+</section>

@@ -5,6 +5,10 @@ module Cast
     class Podcasts < Cast::DB::Relation
       schema :podcasts, infer: true do
         attribute :image_data, Types::Hash
+
+        associations do
+          has_many :episodes
+        end
       end
     end
   end
