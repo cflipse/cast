@@ -1,4 +1,3 @@
-
 Factory.define :podcast do |f|
   f.id { SecureRandom.uuid }
   f.timestamps
