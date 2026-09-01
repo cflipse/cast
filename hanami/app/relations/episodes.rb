@@ -4,7 +4,7 @@ require "tzinfo"
 module Cast
   module Relations
     class Episodes < Cast::DB::Relation
-      PUBLISH_TZ = TZInfo::Timezone.get('America/New_York')
+      include Deps["clock"]
 
       schema :episodes, infer: true do
         attribute :audio_data, Types::Hash
@@ -16,10 +16,8 @@ module Cast
       end
 
       def published 
-        today =  PUBLISH_TZ.now.to_date
-        cutoff = Time.new(today.year, today.month, today.day, 8, 0, 0, PUBLISH_TZ)
-
-        where { (published <= cutoff) & deleted_at.is(nil) }
+        cutoff = clock.cutoff
+        where { (published <= cutoff.utc) & deleted_at.is(nil) }
       end
     end
   end
