@@ -361,6 +361,8 @@ GEM
     timeout (0.6.1)
     transproc (1.1.1)
     tsort (0.2.0)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
     xpath (3.2.0)
       nokogiri (~> 1.8)
     zeitwerk (2.8.3)
@@ -403,6 +405,7 @@ DEPENDENCIES
   rom-factory
   rouge
   sqlite3
+  tzinfo
 
 CHECKSUMS
   addressable (2.9.0) sha256=7fdf6ac3660f7f4e867a0838be3f6cf722ace541dd97767fa42bc6cfa980c7af
@@ -547,6 +550,7 @@ CHECKSUMS
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
   transproc (1.1.1) sha256=b2f9a85ecaf7064f0b3893ffac929de9fd713b13f5aaf822b0bd091fd6f5c8c2
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
+  tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
   xpath (3.2.0) sha256=6dfda79d91bb3b949b947ecc5919f042ef2f399b904013eb3ef6d20dd3a4082e
   zeitwerk (2.8.3) sha256=2c85125a8467ce069e20123d1e709a08955c9d29c118c25b46b7b7fafdbb92e5
 

@@ -14,7 +14,7 @@ module Cast
         end
 
         expose :episodes do |podcast|
-          episode_repo.for_cast(podcast).to_a
+          episode_repo.published(podcast_id: podcast.id)
         end
       end
     end

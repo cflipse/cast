@@ -18,6 +18,8 @@ gem "puma", ">= 7.1"
 gem "rake"
 gem "sqlite3"
 
+gem "tzinfo"
+
 
 gem "bigdecimal", "~> 4.1"
 

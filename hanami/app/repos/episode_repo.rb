@@ -7,6 +7,10 @@ module Cast
         root.where(podcast_id: podcast[:id])
       end
 
+      def published(podcast_id:)
+        root.published.where(podcast_id:).to_a
+      end
+
       def find(id)
         root.where(id: id).one!
       end

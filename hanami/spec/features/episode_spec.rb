@@ -17,7 +17,7 @@ RSpec.feature "guests viewing an episode" do
   end
 
   scenario "guests don't see pending episodes", :pending do
-    episode = Factory[:episode, :published, podcast: podcast, published: 1.day.from_now.to_date]
+    episode = Factory[:episode, podcast:, published: 1.day.from_now.to_date]
 
     visit podcast_path(podcast)
     expect(page).not_to have_text(episode.title)
