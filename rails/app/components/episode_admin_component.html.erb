@@ -1,9 +1,9 @@
 <div class="flex flex-row divide-x">
-  <%= link_to edit_podcast_episode_path(podcast, episode.uuid), class: edit_classes do %>
+  <%= link_to edit_podcast_episode_path(podcast, episode), class: edit_classes do %>
     <%= icon("pencil-fill") %> Edit Episode
   <% end if edit? %>
 
-  <%= button_to podcast_episode_path(podcast, episode.uuid),
+  <%= button_to podcast_episode_path(podcast, episode),
     method: :delete, class: delete_classes,
     form: delete_form_attributes do %>
     <%= icon "trash-fill" %> Delete Episode

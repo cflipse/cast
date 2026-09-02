@@ -36,9 +36,12 @@ class Episode < ApplicationRecord
   end
 
   # Episodes are publicly identified by slug/uuid, never the internal integer
-  # id (see #slug and EpisodesController#show).
+  # id (see #slug and EpisodesController#show). `to_param` defaults to the
+  # stable `uuid` so admin-generated routes (edit/delete links, forms) don't
+  # need to override it explicitly. Public-facing views that want the
+  # 'pretty' slug in the URL pass `episode.slug` explicitly instead.
   def to_param
-    slug
+    uuid
   end
 
   def title
