@@ -7,7 +7,7 @@ module Cast
 
       def create(attributes)
         defaults = {
-          id: SecureRandom.uuid,
+          uuid: SecureRandom.uuid,
         }
 
         root.changeset(:create,

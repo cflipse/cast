@@ -1,5 +1,5 @@
 Factory.define :podcast do |f|
-  f.id { SecureRandom.uuid }
+  f.uuid { SecureRandom.uuid }
   f.timestamps
 
   f.name { fake(:book, :title) }

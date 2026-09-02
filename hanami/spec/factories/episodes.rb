@@ -4,7 +4,7 @@ Factory.define :episode do |f|
   f.name { fake(:hipster, :sentence) }
   f.published { fake :time, :backward, days: 30 }
 
-  f.id { SecureRandom.uuid }
+  f.uuid { SecureRandom.uuid }
   f.timestamps
 
   f.trait :deleted do |x|
