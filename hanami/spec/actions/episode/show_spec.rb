@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Cast::Actions::Episode::Show do
-  let(:params) { Hash[podcast_id: episode.podcast.slug, id: episode[:id] ] }
+  let(:params) { Hash[podcast_id: episode.podcast.slug, id: episode[:uuid] ] }
 
   let(:episode) { Factory[:episode] }
 

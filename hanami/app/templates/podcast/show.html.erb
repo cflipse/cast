@@ -3,7 +3,7 @@
 <section class="podcast-episodes">
   <% episodes.each do |episode| %>
     <article class="episode">
-      <h3><%= link_to episode.name, routes.path(:episode, podcast_id: podcast.slug, id: episode.id) %></h3>
+      <h3><%= link_to episode.name, routes.path(:episode, podcast_id: podcast.slug, id: episode.uuid) %></h3>
 
       <%= episode.description %>
     </article>

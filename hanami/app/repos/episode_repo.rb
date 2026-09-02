@@ -12,7 +12,7 @@ module Cast
       end
 
       def find(id)
-        root.where(id: id).one!
+        root.where(uuid: id).one!
       end
     end
   end

@@ -25,6 +25,15 @@ RSpec.describe Cast::Repos::EpisodeRepo, :db do
 
       expect(repo.published(podcast_id: episode.podcast_id)).to be_empty
     end
+  end
 
+  describe "#find" do
+    it "loads an episode by uuid" do
+      uuid = SecureRandom.uuid
+      episode = Factory[:episode, uuid:]
+      Factory[:episode]
+
+      expect(repo.find(uuid).name).to eq episode.name
+    end
   end
 end
