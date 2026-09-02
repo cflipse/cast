@@ -3,6 +3,8 @@ class Episode < ApplicationRecord
 
   include AudioUploader::Attachment(:audio)
 
+  before_create -> { self.uuid ||= SecureRandom.uuid }
+
   normalizes :slugs, with: -> { it.map(&:parameterize).uniq }
 
   before_save :slugify
@@ -30,7 +32,13 @@ class Episode < ApplicationRecord
   }
 
   def slug
-    slugs.first.presence || id
+    slugs.first.presence || uuid
+  end
+
+  # Episodes are publicly identified by slug/uuid, never the internal integer
+  # id (see #slug and EpisodesController#show).
+  def to_param
+    slug
   end
 
   def title

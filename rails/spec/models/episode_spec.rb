@@ -79,11 +79,11 @@ RSpec.describe Episode do
       expect(episode.slug).to eq("77-testing-a-thing")
     end
 
-    it "falls back to the id" do
+    it "falls back to the uuid" do
       episode = create :episode, number: nil, name: "Testing a Thing"
       episode.slugs.clear
 
-      expect(episode.slug).to eq episode.id
+      expect(episode.slug).to eq episode.uuid
     end
   end
 end

@@ -6,7 +6,7 @@ class AuthorizationsController < ApplicationController
     profile = Profile.find_by(email: email)
 
     if profile
-      session[:current_profile_id] = profile.id
+      session[:current_profile_id] = profile.uuid
 
       redirect_to root_path,
         notice: "Welcome #{profile.display_name}"

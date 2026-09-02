@@ -6,8 +6,7 @@ class EpisodesController < ApplicationController
   end
 
   def show
-    @episode = @podcast.episodes.where(id: params[:id])
-      .or(@podcast.episodes.by_slug(params[:id])).first!
+    @episode = find_episode
 
     authorize @episode
   end
@@ -21,7 +20,7 @@ class EpisodesController < ApplicationController
   end
 
   def edit
-    @episode = authorize @podcast.episodes.find(params[:id])
+    @episode = authorize find_episode
   end
 
   def create
@@ -37,7 +36,7 @@ class EpisodesController < ApplicationController
   end
 
   def update
-    @episode = authorize @podcast.episodes.find(params[:id])
+    @episode = authorize find_episode
 
     @episode.attributes = params.require(:episode)
       .permit(:name, :number, :published, :audio, :description, :show_notes, :explicit)
@@ -51,7 +50,7 @@ class EpisodesController < ApplicationController
   end
 
   def destroy
-    @episode = authorize @podcast.episodes.find(params[:id])
+    @episode = authorize find_episode
 
     @episode.update(deleted_at: Time.current)
 
@@ -60,6 +59,15 @@ class EpisodesController < ApplicationController
   end
 
   private
+
+  # Episodes are addressed publicly (and in all generated routes, since
+  # Episode#to_param returns the slug/uuid) by uuid or slug -- never the
+  # internal integer id -- so every action that receives params[:id] must
+  # look up the same way #show does.
+  def find_episode
+    @podcast.episodes.where(uuid: params[:id])
+      .or(@podcast.episodes.by_slug(params[:id])).first!
+  end
 
   def return_path
     if params[:index].present?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_02_155114) do
   create_table "_litestream_lock", id: false, force: :cascade do |t|
     t.integer "id"
   end
@@ -19,12 +19,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
     t.integer "seq"
   end
 
-  create_table "episodes", id: :string, force: :cascade do |t|
+  create_table "episodes", force: :cascade do |t|
+    t.string "uuid", null: false
     t.string "name", collation: "NOCASE"
     t.integer "number"
     t.integer "season"
     t.text "description"
-    t.string "podcast_id", null: false
+    t.integer "podcast_id", null: false
     t.json "audio_data"
     t.boolean "explicit"
     t.text "show_notes"
@@ -35,11 +36,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
     t.json "slugs", default: [], null: false
     t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
     t.index ["published"], name: "index_episodes_on_published"
+    t.index ["uuid"], name: "index_episodes_on_uuid", unique: true
   end
 
-  create_table "podcast_hosts", id: :string, force: :cascade do |t|
-    t.string "profile_id", null: false
-    t.string "podcast_id", null: false
+  create_table "podcast_hosts", force: :cascade do |t|
+    t.string "uuid"
+    t.integer "profile_id", null: false
+    t.integer "podcast_id", null: false
     t.string "state", collation: "NOCASE"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -47,7 +50,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
     t.index ["profile_id"], name: "index_podcast_hosts_on_profile_id"
   end
 
-  create_table "podcasts", id: :string, force: :cascade do |t|
+  create_table "podcasts", force: :cascade do |t|
+    t.string "uuid"
     t.string "name", null: false, collation: "NOCASE"
     t.string "slug", null: false, collation: "NOCASE"
     t.text "description"
@@ -59,7 +63,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
     t.index ["slug"], name: "index_podcasts_on_slug"
   end
 
-  create_table "profiles", id: :string, force: :cascade do |t|
+  create_table "profiles", force: :cascade do |t|
+    t.string "uuid", null: false
     t.string "login", null: false, collation: "NOCASE"
     t.string "email", null: false, collation: "NOCASE"
     t.string "display_name", null: false
@@ -73,6 +78,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_17_120000) do
     t.index ["email"], name: "index_profiles_on_email"
     t.index ["login"], name: "index_profiles_on_login"
     t.index ["persistence_token"], name: "index_profiles_on_persistence_token"
+    t.index ["uuid"], name: "index_profiles_on_uuid", unique: true
   end
 
   add_foreign_key "episodes", "podcasts"

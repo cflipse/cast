@@ -35,7 +35,7 @@ xml.rss version: "2.0", "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.
         xml.pubDate episode.published
         xml.link podcast_episode_url(@podcast, episode)
 
-        xml.guid episode.id
+        xml.guid episode.uuid
 
         xml.tag! "itunes:duration", episode.duration
         xml.tag! "itunes:explicit", episode.explicit?
