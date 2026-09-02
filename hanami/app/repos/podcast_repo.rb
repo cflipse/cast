@@ -6,13 +6,7 @@ module Cast
       def by_name = root.order(:name).to_a
 
       def create(attributes)
-        defaults = {
-          uuid: SecureRandom.uuid,
-        }
-
-        root.changeset(:create,
-          defaults.merge(attributes)
-        ).commit
+        root.changeset(:create, attributes).commit
       end
 
       def by_slug(slug) = root.where(slug:).one

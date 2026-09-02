@@ -7,6 +7,7 @@ module Cast
       include Deps["clock"]
 
       schema :episodes, infer: true do
+        attribute :uuid, Types::String.default { SecureRandom.uuid }
         attribute :audio_data, Types::Hash
         attribute :slugs, Types.Array(Types::String)
 
