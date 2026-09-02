@@ -35,5 +35,15 @@ RSpec.describe Cast::Repos::EpisodeRepo, :db do
 
       expect(repo.find(uuid).name).to eq episode.name
     end
+
+    it "loads an episode by slug" do
+      episode = Factory[:episode, slugs: ["test-one"]]
+      expect(repo.find("test-one").name).to eq episode.name
+    end
+
+    it "loads an episode by an old slug" do
+      episode = Factory[:episode, slugs: ["test-one", "lost-to-time"]]
+      expect(repo.find("lost-to-time").name).to eq episode.name
+    end
   end
 end

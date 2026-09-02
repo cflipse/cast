@@ -25,6 +25,13 @@ module Cast
         cutoff = clock.cutoff
         where { (published <= cutoff.utc) & deleted_at.is(nil) }
       end
+
+      def by_uuid_or_slug(identifier)
+        where {
+          uuid.is(identifier) |
+          Sequel.lit("EXISTS (SELECT 1 FROM json_each(slugs) WHERE value = ?)", identifier)
+        }
+      end
     end
   end
 end
