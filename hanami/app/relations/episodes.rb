@@ -12,7 +12,6 @@ module Cast
       serialized = Types::String.constructor(&:to_json)
 
       schema :episodes, infer: true do
-        attribute :uuid, Types::String.default { SecureRandom.uuid }
         attribute :audio_data, serialized.optional, read: Types::Hash.constructor(&unpack).optional
         attribute :slugs, serialized.optional, read: Types.Array(Types::String).constructor(&unpack).optional
 
