@@ -24,6 +24,7 @@ Hanami.app.register_provider(:shrine) do
       store: Shrine::Storage::S3.new(**config, prefix:),
     }
 
+    Shrine.plugin :entity
     Shrine.plugin :add_metadata
     Shrine.plugin :determine_mime_type
     Shrine.plugin :pretty_location
