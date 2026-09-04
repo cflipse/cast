@@ -13,7 +13,7 @@ module Cast
     setting :spaces_endpoint, constructor: Types::String
     setting :spaces_bucket, constructor: Types::String
     setting :spaces_region, constructor: Types::String
-    setting :spaces_host, constructor: Types::String
+    setting :spaces_host, constructor: Types::String.optional
     setting :spaces_force_path_style, constructor: Types::Params::Bool, default: false
   end
 end
