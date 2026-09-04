@@ -2,4 +2,7 @@
 
 <% podcasts.each do |cast| %>
   <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %><h2>
+  <div>
+    <%= image_tag cast.image.url  if cast.image %>
+  </div>
 <% end %>
