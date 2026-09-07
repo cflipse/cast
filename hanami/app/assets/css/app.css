@@ -8,6 +8,21 @@
   --sand: #dec897;
   --menu-gradient: linear-gradient(var(--sand), #806529);
   --darksand: #c9b382;
+  --spacing: 1rem;
+}
+
+@layer base {
+  h1, h2, h3 {
+    font-family: var(--header-fonts);
+    color: var(--header-color);
+
+    a { text-decoration: none; }
+  }
+
+  body {
+    max-width: 90rem;
+    margin-inline: auto;
+  }
 }
 
 @layer components {
@@ -19,18 +34,26 @@
     background: url('../images/ds_logo_crop.png') no-repeat right bottom;
     min-height: 100px;
 
+    /* position the masthead next to the page */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    color: var(--header-color);
+
     h1 {
-      color: var(--header-color);
-      font-family: var(--header-fonts);
       font-size: 3rem;
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      a:visited { color: inherit; }
+      text-shadow: 0.1rem 0.1rem .1em #000;
     }
+  }
+}
+
+@layer components {
+  #sitenav {
+    background: var(--menu-gradient);
+    padding: 0.5rem 1rem;
+
+    display: flex;
+    flex-direction: row;
   }
 }
 
@@ -38,17 +61,8 @@ body {
   color: #000;
   font-family: sans-serif;
 
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-
   display: grid;
   grid-template-rows: fit-content(3rem) fit-content(2rem) 1fr fit-content(2rem);
-}
-
-body #sitenav {
-  background: var(--menu-gradient);
-  padding: 0.5rem 1rem;
 }
 
 body > main {
@@ -57,8 +71,6 @@ body > main {
 }
 
 .podcast {
-  --spacing: 1rem;
-
   display: flex;
   flex-direction: row;
   gap: var(--spacing);
