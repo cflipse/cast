@@ -10,7 +10,7 @@ module Cast
       end
 
       def published(podcast_id:)
-        root.published.where(podcast_id:).to_a
+        root.published.latest.where(podcast_id:).to_a
       end
 
       def find(id)

@@ -5,6 +5,18 @@
       <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
 
       <%= cast.description %>
+
+      <% if cast.latest_episode %>
+        <div>
+
+          <h3>Latest Episode</h3>
+
+          <%= link_to cast.latest_episode.name,
+            routes.path(:episode, podcast_id: cast.slug, id: cast.latest_episode.uuid) %>
+
+          <%= cast.episode_description %>
+        </div>
+      <% end %>
     </section>
   </article>
 <% end %>

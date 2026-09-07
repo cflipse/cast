@@ -7,7 +7,7 @@ module Cast
         include Deps["repos.podcast_repo"]
 
         decorate :podcasts do
-          podcast_repo.by_name
+          podcast_repo.index
         end
       end
     end

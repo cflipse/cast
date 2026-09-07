@@ -6,7 +6,6 @@ module Cast
     class Episodes < Cast::DB::Relation
       include Deps["clock"]
 
-
       unpack = lambda { |values| (String === values) ? JSON.parse(values) : values }
 
       serialized = Types::String.constructor(&:to_json)
@@ -18,6 +17,10 @@ module Cast
         associations do
           belongs_to :podcast
         end
+      end
+
+      def latest
+        order { published.desc }
       end
 
       def published 

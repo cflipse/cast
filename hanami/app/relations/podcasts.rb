@@ -11,6 +11,7 @@ module Cast
 
         associations do
           has_many :episodes
+          has_one :latest_episode, relation: :episodes, view: :latest
         end
       end
     end
