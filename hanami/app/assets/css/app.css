@@ -1,5 +1,7 @@
 @layer reset, base, components, utilities;
 
+@import "./reset.css";
+
 :root {
   --header-color: #9c0000;
   --header-fonts: Packard Antique, Georgia, Cambria, Times, serif;
