@@ -1,12 +1,11 @@
 @layer reset, base, components, utilities;
 
-@layer base {
-  :root {
-    --header-color: #9c0000;
-    --sand: #dec897;
-    --menu-gradient: linear-gradient(var(--sand), #806529);
-    --darksand: #c9b382;
-  }
+:root {
+  --header-color: #9c0000;
+  --header-fonts: Packard Antique, Georgia, Cambria, Times, serif;
+  --sand: #dec897;
+  --menu-gradient: linear-gradient(var(--sand), #806529);
+  --darksand: #c9b382;
 }
 
 @layer components {
@@ -20,7 +19,14 @@
 
     h1 {
       color: var(--header-color);
-      a { color: inherit; }
+      font-family: var(--header-fonts);
+      font-size: 3rem;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
       a:visited { color: inherit; }
     }
   }
