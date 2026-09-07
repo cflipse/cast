@@ -14,7 +14,7 @@ module Cast
       end
 
       def find(id)
-        root.by_uuid_or_slug(id).one!
+        root.published.by_uuid_or_slug(id).one!
       end
 
       # Create a new Episode

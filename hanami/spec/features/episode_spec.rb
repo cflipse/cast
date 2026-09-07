@@ -15,33 +15,29 @@ RSpec.feature "guests viewing an episode" do
     #expect(page).to have_selector("audio[src='#{episode.audio_url}']")
   end
 
-  scenario "guests don't see pending episodes", :pending do
-    episode = Factory[:episode, podcast:, published: 1.day.from_now.to_date]
+  scenario "guests don't see pending episodes" do
+    tomorrow = Date.today + 1
 
-    visit podcast_path(podcast)
-    expect(page).not_to have_text(episode.title)
+    podcast = Factory[:podcast]
+    episode = Factory[:episode, podcast:, published: tomorrow]
 
-    # verify they can't see it when the day has changed in UTC.
-    travel_to Time.current.in_time_zone("America/New_York").beginning_of_day + 21.hours
-
-    visit podcast_path(podcast)
-    expect(page).not_to have_text(episode.title)
+    visit "/podcasts/#{podcast.slug}/episodes/#{episode.uuid}"
+    expect(page).not_to have_text(episode.name)
   end
 
-  scenario "view an episode by slug or uuid", :pending do
-    Factory[create :episode, :published, podcast: podcast]
-
-    episode.update(name: "ooops, got the name wrong the first time")
+  scenario "view an episode by slug or uuid" do
+    podcast = Factory[:podcast]
+    episode = Factory[:episode, :published, podcast:, slugs: ["slug-the-first", "slug-the-last"]]
 
     aggregate_failures do
-      visit podcast_episode_url(podcast, episode.id)
-      expect(page).to have_text(episode.title)
+      visit "/podcasts/#{podcast.slug}/episodes/#{episode.uuid}"
+      expect(page).to have_text(episode.name)
 
-      visit podcast_episode_url(podcast, episode.slugs.first)
-      expect(page).to have_text(episode.title)
+      visit "/podcasts/#{podcast.slug}/episodes/#{episode.slugs.first}"
+      expect(page).to have_text(episode.name)
 
-      visit podcast_episode_url(podcast, episode.slugs.last)
-      expect(page).to have_text(episode.title)
+      visit "/podcasts/#{podcast.slug}/episodes/#{episode.slugs.last}"
+      expect(page).to have_text(episode.name)
     end
   end
 end
