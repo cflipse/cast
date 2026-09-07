@@ -41,7 +41,7 @@
     color: var(--header-color);
 
     h1 {
-      font-size: 3rem;
+      font-size: 4rem;
       text-shadow: 0.1rem 0.1rem .1em #000;
     }
   }
@@ -54,6 +54,8 @@
 
     display: flex;
     flex-direction: row;
+    gap: var(--spacing);
+    a { text-decoration: none; font-weight: 600; }
   }
 }
 
@@ -67,7 +69,9 @@ body {
 
 body > main {
   background-color: #fff;
-  padding-inline: 1rem;
+  padding-top: 1rem;
+
+  > article { padding-inline: 1rem; }
 }
 
 .podcast {
@@ -77,3 +81,11 @@ body > main {
 }
 
 .podcast img { max-width: 28rem; }
+
+@layer components {
+  article.podcast {
+    box-shadow: 0 0.5rem 1rem -3px #0000001a;
+
+    margin-bottom: 2rem;
+  }
+}
