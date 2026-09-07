@@ -1,5 +1,59 @@
+@layer reset, base, components, utilities;
+
+@layer base {
+  :root {
+    --header-color: #9c0000;
+    --sand: #dec897;
+    --menu-gradient: linear-gradient(var(--sand), #806529);
+    --darksand: #c9b382;
+  }
+}
+
+@layer components {
+  html {
+    background: url('../images/papyrus_map.png') no-repeat fixed center top black;
+  }
+
+  body > header {
+    background: url('../images/ds_logo_crop.png') no-repeat right bottom;
+    min-height: 100px;
+
+    h1 {
+      color: var(--header-color);
+      a { color: inherit; }
+      a:visited { color: inherit; }
+    }
+  }
+}
+
 body {
-  background-color: #fff;
   color: #000;
   font-family: sans-serif;
+
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+
+  display: grid;
+  grid-template-rows: fit-content(3rem) fit-content(2rem) 1fr fit-content(2rem);
 }
+
+body #sitenav {
+  background: var(--menu-gradient);
+  padding: 0.5rem 1rem;
+}
+
+body > main {
+  background-color: #fff;
+  padding-inline: 1rem;
+}
+
+.podcast {
+  --spacing: 1rem;
+
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing);
+}
+
+.podcast img { max-width: 28rem; }

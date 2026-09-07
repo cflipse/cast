@@ -1,5 +1,6 @@
-<h1>Cast::Views::Home::Index</h1>
-
 <% podcasts.each do |cast| %>
-  <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %><h2>
+  <article class="podcast">
+    <div><%= image_tag cast.image_url if cast.image %></div>
+    <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
+  </article>
 <% end %>

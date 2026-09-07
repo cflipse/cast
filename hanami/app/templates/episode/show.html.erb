@@ -1,1 +1,6 @@
 <h1><%= episode.name %></h1>
+
+
+<% if episode.audio %>
+  <%= audio_tag episode.audio_url, controls: true %>
+<% end %>
