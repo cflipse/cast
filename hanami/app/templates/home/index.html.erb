@@ -1,6 +1,10 @@
 <% podcasts.each do |cast| %>
   <article class="podcast">
     <div><%= image_tag cast.image_url if cast.image %></div>
-    <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
+    <section>
+      <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
+
+      <%= cast.description %>
+    </section>
   </article>
 <% end %>

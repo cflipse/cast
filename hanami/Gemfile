@@ -24,6 +24,8 @@ gem "shrine-rom"
 gem "aws-sdk-s3"
 gem "taglib-ruby"
 
+gem "kramdown"
+
 gem "bigdecimal", "~> 4.1"
 
 group :development do

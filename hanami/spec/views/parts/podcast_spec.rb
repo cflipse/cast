@@ -7,4 +7,20 @@ RSpec.describe Cast::Views::Parts::Podcast do
   it "works" do
     expect(subject).to be_kind_of(described_class)
   end
+
+  describe "#description" do
+    it "sanitizes input" do
+      allow(value).to receive(:description).and_return "<script>alert()</script>"
+      expect(subject.description).not_to include("<script>")
+    end
+
+    it "converts input to markdown" do
+      allow(value).to receive(:description).and_return <<~MD
+        * this is a test
+        * of two list items
+      MD
+
+      expect(subject.description).to include("<li>this is a test</li>")
+    end
+  end
 end
