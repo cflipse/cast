@@ -7,7 +7,7 @@ module Cast
 
         include Deps["repos.episode_repo"]
 
-        expose :episode do |id:|
+        decorate :episode do |id:|
           episode_repo.find(id)
         end
       end
