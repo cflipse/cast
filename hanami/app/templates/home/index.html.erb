@@ -16,6 +16,9 @@
 
           <%= cast.episode_description %>
         </div>
+        <div>
+          Hosted by:  <%= cast.hosts.map(&:display_name).join(", ") %>
+        </div>
       <% end %>
     </section>
   </article>
