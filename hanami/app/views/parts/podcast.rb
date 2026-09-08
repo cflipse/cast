@@ -1,24 +1,17 @@
 # auto_register: false
 # frozen_string_literal: true
 
-require "kramdown"
 
 module Cast
   module Views
     module Parts
       class Podcast < Cast::Views::Part
+        include Deps["markdown"]
+
         include Uploaders::CoverUploader::Attachment(:image)
 
-        def description = format(super)
-        def episode_description = format(latest_episode.description)
-
-        private
-
-        def format(text)
-          helpers.escape_html(text)
-            .then { |md| Kramdown::Document.new md }
-            .then { |md| helpers.raw md.to_html }
-        end
+        def description = markdown.to_html(super)
+        def episode_description = markdown.to_html(latest_episode.description)
       end
     end
   end

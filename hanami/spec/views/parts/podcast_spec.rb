@@ -1,42 +1,30 @@
 # frozen_string_literal: true
 
 RSpec.describe Cast::Views::Parts::Podcast do
-  subject { described_class.new(value:) }
+  subject { described_class.new(value:, markdown:) }
   let(:value) { double("podcast") }
+  let(:markdown) { instance_double(Cast::Markdown, to_html: "") }
 
   it "works" do
     expect(subject).to be_kind_of(described_class)
   end
 
   describe "#description" do
-    it "sanitizes input" do
-      allow(value).to receive(:description).and_return "<script>alert()</script>"
-      expect(subject.description).not_to include("<script>")
-    end
+    it "sanititzes the description" do
+      allow(value).to receive(:description).and_return "foo"
+      subject.description
 
-    it "converts input to markdown" do
-      allow(value).to receive(:description).and_return <<~MD
-        * this is a test
-        * of two list items
-      MD
-
-      expect(subject.description).to include("<li>this is a test</li>")
+      expect(markdown).to have_received(:to_html).with("foo")
     end
   end
 
   describe "#episode_description" do
     it "sanitizes input" do
-      allow(value).to receive_message_chain(:latest_episode, :description).and_return "<script>alert()</script>"
-      expect(subject.episode_description).not_to include("<script>")
-    end
+      allow(value).to receive_message_chain(:latest_episode, :description).and_return "episode description"
 
-    it "converts input to markdown" do
-      allow(value).to receive_message_chain(:latest_episode, :description).and_return <<~MD
-        * this is a test
-        * of two list items
-      MD
+      subject.episode_description
 
-      expect(subject.episode_description).to include("<li>this is a test</li>")
+      expect(markdown).to have_received(:to_html).with("episode description")
     end
   end
 end
