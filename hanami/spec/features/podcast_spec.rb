@@ -33,6 +33,4 @@ RSpec.feature "/podcasts/:id" do
     #
     # expect(feed.search("item title").count).to eq 7
   end
-
-
 end
