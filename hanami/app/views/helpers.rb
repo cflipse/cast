@@ -14,12 +14,12 @@ module Cast
         config = ViteRuby.instance.config
 
         src = "#{config.protocol}://#{config.host_with_port}/#{config.public_output_dir}/@vite/client"
-        tag.script(type: "module", src: src)
+        tag.script(type: "module", src: src, nonce: content_security_policy_nonce)
       end
 
       def vite_javascript_tag(name)
         src = ViteRuby.instance.manifest.path_for(name, type: :javascript)
-        tag.script(src: src, type: "module")
+        tag.script(src: src, type: "module", nonce: content_security_policy_nonce)
       end
 
       def vite_stylesheet_tag(name)
