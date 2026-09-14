@@ -12,6 +12,8 @@ module Cast
 
         def description = markdown.to_html(super)
         def episode_description = markdown.to_html(latest_episode.description)
+
+        def episodes = super.map { |value| Parts::Episode.new(value:) }
       end
     end
   end
