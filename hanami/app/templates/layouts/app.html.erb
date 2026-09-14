@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cast</title>
-    <%= favicon_tag %>
-    <%= javascript_tag "app" %>
+
+    <%= tag.link(rel: "icon", src: vite_asset_path("images/favicon.ico")) %>
+
+    <%= vite_javascript_tag "application.js" %>
+    <%= vite_stylesheet_tag "application.css" %>
     <%= vite_client_tag %>
   </head>
   <body>
@@ -23,7 +26,5 @@
     <main>
       <%= yield %>
     </main>
-
-    <%= javascript_tag "app" %>
   </body>
 </html>

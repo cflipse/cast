@@ -6,3 +6,5 @@ console.log('Vite ⚡️ Ruby')
 
 // Example: Import a stylesheet in <sourceCodeDir>/index.css
 // import '~/index.css'
+import "../css/app.css";
+import "../css/fonts.css";
