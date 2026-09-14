@@ -8,6 +8,8 @@ module Cast
           "repos.podcast_repo",
         ]
 
+        config.layout = false
+
         expose :podcast do |id:|
           podcast_repo.by_slug(id)
         end

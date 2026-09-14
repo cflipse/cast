@@ -7,14 +7,17 @@ module Cast
         config.formats.accept :html, :rss
 
         include Deps[
+          "feed_builder",
           view: "views.podcast.show",
-          feed: "views.feed.show",
+          repo: "repos.podcast_repo",
         ]
 
         def handle(request, response)
           case response.format
           when :html then response.render(view, id: request.params[:id])
-          when :rss  then response.render(feed, id: request.params[:id])
+          when :rss  then
+            podcast = repo.by_slug(request.params[:id])
+            feed_builder.call(podcast, routes)
           end
         end
       end
