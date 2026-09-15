@@ -1,7 +1,7 @@
 <% podcasts.each do |cast| %>
   <article class="podcast">
     <div><%= image_tag cast.image_url if cast.image %></div>
-    <section>
+    <section class="flex-col g-1">
       <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
 
       <%= cast.description %>
