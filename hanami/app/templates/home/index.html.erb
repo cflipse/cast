@@ -2,22 +2,37 @@
   <article class="podcast">
     <div><%= image_tag cast.image_url if cast.image %></div>
     <section class="flex-col g-1">
-      <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
+      <header>
+        <h2><%= link_to cast.name, routes.path(:podcast, id: cast.slug) %></h2>
+
+        <div>
+          <%= link_to routes.path(:podcast, id: "#{cast.slug}.rss"), class: "icon-link" do %>
+            <i class="bi bi-rss-fill"></i> Feed
+          <% end %>
+        </div>
+      </header>
 
       <%= cast.description %>
 
-      <% if cast.latest_episode %>
-        <div>
+      <div>
+        Hosted by:  <%= cast.hosts.map(&:display_name).join(", ") %>
+      </div>
 
+
+      <% if cast.latest_episode %>
+        <header class="flex-col">
           <h3>Latest Episode</h3>
 
           <%= link_to cast.latest_episode.name,
-            routes.path(:episode, podcast_id: cast.slug, id: cast.latest_episode.uuid) %>
+            routes.path(:episode, podcast_id: cast.slug, id: cast.latest_episode.slugs.first) %>
+        </header>
 
-          <%= cast.episode_description %>
-        </div>
+        <%= cast.episode_description %>
+
         <div>
-          Hosted by:  <%= cast.hosts.map(&:display_name).join(", ") %>
+          <%= link_to routes.path(:episode, podcast_id: cast.slug, id: cast.latest_episode.slugs.first), class: "icon-link" do %>
+            <i class="bi bi-play"></i> Listen Now
+          <% end %>
         </div>
       <% end %>
     </section>

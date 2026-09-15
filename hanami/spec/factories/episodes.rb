@@ -3,6 +3,7 @@ Factory.define :episode do |f|
 
   f.name { fake(:hipster, :sentence) }
   f.published { fake :time, :backward, days: 30 }
+  f.sequence(:slugs) { |n| ["slug-#{n}"] }
 
   f.timestamps
 

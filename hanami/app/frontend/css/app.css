@@ -49,6 +49,33 @@
 }
 
 @layer components {
+  section > header {
+    display: flex;
+    flex-direction: inline;
+
+    h2 { font-size: 2.5rem; flex-grow: 1; }
+  }
+
+  header:has(h3) {
+    font-size: 1.75rem;
+  }
+}
+
+@layer components {
+  .icon-link {
+    border: 0.1rem solid var(--header-color);
+    background: var(--header-color);
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    color: white;
+
+    text-decoration: none;
+
+    &:hover { filter: brightness(1.2); }
+  }
+}
+
+@layer components {
   #sitenav {
     background: var(--menu-gradient);
     padding: 0.5rem 1rem;
@@ -86,6 +113,7 @@ body > main {
 
   article.podcast {
     box-shadow: 0 0.5rem 1rem -3px #0000001a;
+    padding-bottom: var(--spacing);
 
     margin-bottom: 2rem;
   }
