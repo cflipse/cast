@@ -9,6 +9,5 @@ module Cast
 
     get "/podcasts/:podcast_id/episodes/:id", to: "episode.show", as: :episode
     get "/episode/:id", to: "episode.show"
-    get "/feed/:id", to: "feed.show"
   end
 end
