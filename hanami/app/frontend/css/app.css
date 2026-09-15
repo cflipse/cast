@@ -75,15 +75,15 @@ body > main {
   > article { padding-inline: 1rem; }
 }
 
-.podcast {
-  display: flex;
-  flex-direction: row;
-  gap: var(--spacing);
-}
-
-.podcast img { max-width: 28rem; }
-
 @layer components {
+  .podcast {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing);
+
+    img { max-width: 28rem; }
+  }
+
   article.podcast {
     box-shadow: 0 0.5rem 1rem -3px #0000001a;
 
