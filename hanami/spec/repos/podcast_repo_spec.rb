@@ -24,4 +24,15 @@ RSpec.describe Cast::Repos::PodcastRepo, :db do
       expect(repo.index.first.hosts.map(&:login)).to eq hosts.map(&:login)
     end
   end
+
+  describe "by_slug" do
+    it "includes published episodes" do
+      podcast = Factory[:podcast]
+      Factory[:episode, podcast:, published: Date.today, name: "test episode"]
+      Factory[:episode, podcast:, published: Date.today - 3]
+      3.times { Factory[:episode, :draft, podcast:] }
+
+      expect(repo.by_slug(podcast.slug).episodes.count).to eq 2
+    end
+  end
 end

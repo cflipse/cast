@@ -10,7 +10,7 @@ module Cast
         attribute :image_data, serialized.optional, read: Types::Hash.constructor(&unpack).optional
 
         associations do
-          has_many :episodes
+          has_many :episodes, relation: :episodes, view: :published
           has_one :latest_episode, relation: :episodes, view: :latest
 
           has_many :podcast_hosts

@@ -14,8 +14,12 @@ module Cast
         root.changeset(:create, attributes).commit
       end
 
-      def by_slug(slug) = root.where(slug:).combine(:episodes).one
-
+      def by_slug(slug)
+        root.where(slug:)
+          .combine(:episodes)
+          .node(:episodes) { |eps| eps.published }
+          .one
+      end
     end
   end
 end
