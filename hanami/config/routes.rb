@@ -6,8 +6,8 @@ module Cast
     root to: "home.index"
 
     get "/podcasts/:id(.:format)", to: "podcast.show", as: :podcast
-
     get "/podcasts/:podcast_id/episodes/:id", to: "episode.show", as: :episode
-    get "/episode/:id", to: "episode.show"
+
+    resource :profiles, only: %w[index]
   end
 end

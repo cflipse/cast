@@ -17,5 +17,9 @@ RSpec.describe Cast::Slugger do
     it "removes repeated separators" do
       expect(slugger.call("((something) in the air (tonight))")).to eq "something-in-the-air-tonight"
     end
+
+    it "transliterates unicode characters" do
+      expect(slugger.call("Françoise Sagan".encode("UTF-8"))).to eq "francoise-sagan"
+    end
   end
 end

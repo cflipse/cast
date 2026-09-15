@@ -1,7 +1,9 @@
+require "i18n"
+
 module Cast
   class Slugger
     def call(str)
-      str.to_s
+      I18n.transliterate(str.to_s)
         .downcase
         .gsub(/[^a-z0-9]+/i, "-")
         .gsub(/(^-|-+$)/, "")
