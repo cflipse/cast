@@ -3,7 +3,7 @@ Factory.define :profile do |f|
 
   f.login { fake :internet, :username }
   f.email { fake :internet, :email }
-  f.display_name { fake :name }
+  f.display_name { fake :name, :name }
 
   f.persistence_token { SecureRandom.uuid }
   f.roles { [] }
