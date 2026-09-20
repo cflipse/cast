@@ -7,8 +7,5 @@ module Cast
 
     get "/podcasts/:id(.:format)", to: "podcast.show", as: :podcast
     get "/podcasts/:podcast_id/episodes/:id", to: "episode.show", as: :episode
-
-    resource :profiles, only: %w[index]
-    get "/profiles", to: "profiles.index"
   end
 end
