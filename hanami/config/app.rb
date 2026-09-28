@@ -7,6 +7,7 @@ module Cast
     environment(:development) do
       require "vite_ruby" 
 
+
       config.middleware.use ViteRuby::DevServerProxy
 
       config.actions.content_security_policy[:img_src] += " http://localhost:*"
@@ -27,5 +28,13 @@ module Cast
         root: config.actions.public_directory,
         header_rules: [[:all, {"cache-control" => "public, max-age=31536000, immutable"}]]
     end
+
+    config.actions.sessions = :cookie, {
+      key: "cast.session",
+      secret: settings.session_secret,
+      expire_after: 60*60*24*365,  # 1 year
+    }
+
+    start(:warden)
   end
 end

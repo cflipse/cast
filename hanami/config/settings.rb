@@ -15,5 +15,7 @@ module Cast
     setting :spaces_region, constructor: Types::String, default: "nyc3"
     setting :spaces_host, constructor: Types::String.optional
     setting :spaces_force_path_style, constructor: Types::Params::Bool, default: false
+
+    setting :session_secret, constructor: Types::String
   end
 end
