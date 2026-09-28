@@ -32,6 +32,8 @@ gem "bigdecimal", "~> 4.1"
 gem "rss"
 gem "vite_ruby"
 
+gem "warden"
+
 group :development do
   gem "hanami-webconsole", "~> 3.0.0"
 end
