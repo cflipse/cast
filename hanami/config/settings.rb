@@ -17,5 +17,8 @@ module Cast
     setting :spaces_force_path_style, constructor: Types::Params::Bool, default: false
 
     setting :session_secret, constructor: Types::String
+
+    setting :google_client_id, constructor: Types::String, default: ""
+    setting :google_client_secret, constructor: Types::String, default: ""
   end
 end

@@ -4,6 +4,10 @@ require "hanami"
 
 module Cast
   class App < Hanami::App
+    config.inflections do |inflect|
+      inflect.acronym "OAuth"
+    end
+
     environment(:development) do
       require "vite_ruby" 
 
