@@ -1,5 +1,4 @@
 RSpec.describe "podcasts/:slug", type: :request do
-
   it "loads the page and it's episodes", :db do
     podcast = Factory[:podcast, slug: "bso"]
     3.times { Factory[:episode, podcast: podcast] }

@@ -7,7 +7,6 @@ module Cast
     environment(:development) do
       require "vite_ruby" 
 
-
       config.middleware.use ViteRuby::DevServerProxy
 
       config.actions.content_security_policy[:img_src] += " http://localhost:*"
@@ -35,6 +34,10 @@ module Cast
       expire_after: 60*60*24*365,  # 1 year
     }
 
-    start(:warden)
+    require "warden"
+    config.middleware.use Warden::Manager do |warden|
+      warden.default_strategies :oauth
+      warden.failure_app = -> { AuthFailure::Show.new.call it }
+    end
   end
 end
