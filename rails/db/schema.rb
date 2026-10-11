@@ -33,7 +33,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_02_155114) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
-    t.json "slugs", default: [], null: false
+    t.json "slugs", null: false
     t.index ["podcast_id"], name: "index_episodes_on_podcast_id"
     t.index ["published"], name: "index_episodes_on_published"
     t.index ["uuid"], name: "index_episodes_on_uuid", unique: true
@@ -71,7 +71,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_02_155114) do
     t.string "persistence_token"
     t.text "bio"
     t.string "avatar"
-    t.json "roles", default: [], null: false
+    t.json "roles", null: false
     t.boolean "admin", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

@@ -55,6 +55,8 @@ class Episode < ApplicationRecord
   private
 
   def slugify
+    self.slugs ||= []
+
     [number, name.parameterize].join("-")
       .then { |slug| slugs.unshift slug }
   end

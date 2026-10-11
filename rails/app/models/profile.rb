@@ -3,6 +3,7 @@ class Profile < ApplicationRecord
   has_many :podcasts, through: :podcast_hosts
 
   before_create -> { self.uuid ||= SecureRandom.uuid }
+  before_create { self.roles ||= [] }
 
   validates :login, presence: true
   validates :email, presence: true, format: /\A.*@.+\z/
