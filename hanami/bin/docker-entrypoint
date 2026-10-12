@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if [ "${1}" == "./bin/hanami" ] && [ "${2}" == "server" ]; then
+  ./bin/hanami db prepare
+fi
+
+exec "${@}"
