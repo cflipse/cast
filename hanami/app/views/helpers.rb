@@ -11,9 +11,8 @@ module Cast
       def vite_client_tag
         return unless ViteRuby.instance.dev_server_running?
 
-        config = ViteRuby.instance.config
-
-        src = "#{config.protocol}://#{config.host_with_port}/#{config.public_output_dir}/@vite/client"
+        # Served through the DevServerProxy so the browser never needs the internal vite host
+        src = "/#{ViteRuby.instance.config.public_output_dir}/@vite/client"
         tag.script(type: "module", src: src, nonce: content_security_policy_nonce)
       end
 

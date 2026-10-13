@@ -13,6 +13,41 @@ services:
     volumes:
       - redis:/data
 
+  hanami:
+    build:
+      context: hanami
+      target: development
+      dockerfile: Dockerfile
+    command: "bin/hanami server"
+    depends_on:
+      seaweed-init: *started
+    links:
+      - seaweed
+      - vite-hanami
+    volumes:
+      - ./hanami:/srv/cast
+      - hanami_node_modules:/srv/cast/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2300/up"]
+    ports:
+      - 2300:2300
+    environment:
+      SPACES_ENDPOINT: http://seaweed:8333/
+      SPACES_HOST: http://localhost:8334/casts/
+      VITE_RUBY_HOST: vite-hanami
+
+  vite-hanami:
+    build:
+      context: hanami
+      target: development
+      dockerfile: Dockerfile
+    volumes:
+      - ./hanami:/srv/cast
+      - hanami_node_modules:/srv/cast/node_modules
+    environment:
+      VITE_RUBY_HOST: 0.0.0.0
+    command: bin/vite dev
+
   rails:
     build:
       context: rails
@@ -26,6 +61,7 @@ services:
       - seaweed
     volumes:
       - ./rails:/srv/cast
+      - rails_node_modules:/srv/cast/node_modules
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6700"]
     ports:
@@ -33,7 +69,7 @@ services:
     environment:
       SPACES_ENDPOINT: http://seaweed:8333/
       SPACES_HOST: http://localhost:8334/casts/
-      VITE_RUBY_HOST: vite
+      VITE_RUBY_HOST: vite-rails
 
   vite-rails:
     build:
@@ -42,6 +78,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./rails:/srv/cast
+      - rails_node_modules:/srv/cast/node_modules
     environment:
       VITE_RUBY_HOST: 0.0.0.0
     command: bin/vite dev
@@ -78,5 +115,7 @@ services:
       - ./db/spaces/casts:/db/spaces/casts:ro
 
 volumes:
+  hanami_node_modules:
+  rails_node_modules:
   redis:
   seaweed:
