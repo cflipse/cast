@@ -432,6 +432,7 @@ DEPENDENCIES
   capybara
   database_cleaner-sequel
   dotenv
+  dry-cli
   dry-operation (>= 1.0.1)
   dry-types (~> 1.7)
   dry-validation (~> 1.11)
