@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Build the front-door Caddy image locally, push it to the VM's registry
+# through an SSH tunnel, and roll it out on the VM. Also provisions
+# /srv/cast/caddy/{Caddyfile,branches/} on first run, since the service
+# bind-mounts both rather than baking the Caddyfile into the image.
+#
+#   deploy/update-caddy you@your-droplet-ip
+#
+# Safe to run any time: creates the `caddy` service on first run, rolls
+# out a new image on every later run (whether that's a Dockerfile/plugin
+# change, or just picking up a newer upstream Caddy). For a Caddyfile-only
+# edit, use deploy/reload-caddy instead -- no rebuild needed. Called by
+# deploy/bootstrap for the initial install; run it directly for updates
+# afterwards.
+
+require_relative "lib/shell"
+include Shell
+
+host = ARGV[0] or abort "usage: deploy/update-caddy user@host"
+
+CONTEXT = "vm"
+NETWORK = "swarm-net"
+REGISTRY_PORT = 5555
+CADDY_SERVICE = "caddy"
+SCRIPT_DIR = __dir__
+DOCKER = ["docker", "--context", CONTEXT].freeze
+
+# Tag by content (git SHA, same convention bin/deploy uses for app
+# images) so every build gets a distinct tag. A reused static tag (e.g.
+# caddy:bootstrap) makes `docker service update --image` a silent no-op,
+# since Swarm only notices a change when the tag itself differs.
+tag = begin
+  capture("git", "-C", SCRIPT_DIR, "rev-parse", "--short", "HEAD").strip
+rescue StandardError
+  Time.now.to_i.to_s
+end
+caddy_image = "localhost:#{REGISTRY_PORT}/caddy:#{tag}"
+
+# Build on THIS machine, not the VM's daemon, so the host never spends
+# its own CPU/disk compiling images.
+log "Building front-door Caddy image locally (#{caddy_image})"
+run("docker", "build", "-t", caddy_image, File.join(SCRIPT_DIR, "caddy"))
+
+log "Ensuring /srv/cast/caddy/branches exists and Caddyfile is current"
+run("ssh", host, "mkdir -p /srv/cast/caddy/branches")
+run("scp", File.join(SCRIPT_DIR, "caddy", "Caddyfile"), "#{host}:/srv/cast/caddy/Caddyfile")
+
+log "Tunneling to the registry and pushing"
+tunnel_pid = Process.spawn("ssh", "-NL", "#{REGISTRY_PORT}:localhost:#{REGISTRY_PORT}", host)
+begin
+  sleep 1 # give the tunnel a moment to come up before pushing through it
+  run("docker", "push", caddy_image)
+ensure
+  Process.kill("TERM", tunnel_pid)
+  Process.wait(tunnel_pid)
+end
+
+services = capture(*DOCKER, "service", "ls", "--format", "{{.Name}}").lines(chomp: true)
+if services.include?(CADDY_SERVICE)
+  log "Rolling out #{caddy_image} to existing #{CADDY_SERVICE} service"
+  run(*DOCKER, "service", "update", "--image", caddy_image, CADDY_SERVICE)
+else
+  log "Creating #{CADDY_SERVICE} service"
+  run(*DOCKER, "service", "create",
+      "--name", CADDY_SERVICE,
+      "--network", NETWORK,
+      "--publish", "published=80,target=80",
+      "--publish", "published=443,target=443",
+      "--mount", "type=volume,source=caddy-data,destination=/data",
+      "--mount", "type=volume,source=caddy-config,destination=/config",
+      "--mount", "type=bind,source=/srv/cast/caddy/Caddyfile,destination=/etc/caddy/Caddyfile",
+      "--mount", "type=bind,source=/srv/cast/caddy/branches,destination=/etc/caddy/branches",
+      caddy_image)
+end
+
+log "Caddy update complete"
