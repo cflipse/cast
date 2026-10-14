@@ -88,12 +88,13 @@ class SetupDocker < Dry::CLI::Command
   end
 
   def create_docker_context(host, context)
-    if success?("docker", "context", "inspect", context)
-      log "Docker context #{context} already exists, skipping"
-    else
-      log "Creating docker context #{context} -> #{host}"
-      run("docker", "context", "create", context, "--docker", "host=ssh://#{host}")
-    end
+    # Always reset: recreating a context is cheap, and unconditionally
+    # doing so avoids a stale context silently pointing at a server that
+    # no longer exists (e.g. after swapping in a replacement droplet).
+    run("docker", "context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
+
+    log "Creating docker context #{context} -> #{host}"
+    run("docker", "context", "create", context, "--docker", "host=ssh://#{host}")
   end
 
   def docker_swarm_init(context, ip)
