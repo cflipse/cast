@@ -179,9 +179,9 @@ class DeployCaddy < Dry::CLI::Command
     run("scp", File.join(dir, "Caddyfile"), "#{host}:#{CAST_ROOT}/caddy/Caddyfile")
   end
 
-  def publish(host, port, caddy_image)
+  def publish(host, caddy_image)
     log "Tunneling to the registry and pushing"
-    tunnel_pid = Process.spawn("ssh", "-NL", "#{port}:localhost:#{port}", host)
+    tunnel_pid = Process.spawn("ssh", "-NL", "#{REGISTRY_PORT}:localhost:#{REGISTRY_PORT}", host)
     begin
       sleep 1 # give the tunnel a moment to come up before pushing through it
       run("docker", "push", caddy_image)
