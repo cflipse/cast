@@ -3,6 +3,7 @@
 require "bundler/setup"
 require "dry/cli"
 require "open3"
+require "pathname"
 
 module Deploy
   module CLI
@@ -25,11 +26,36 @@ module Deploy
           Shell.run("ssh", host, 'sudo mkdir -p /srv/cast && sudo chown "$(id -u):$(id -g)" /srv/cast')
 
           SetupDocker.new.call(host:, context:)
+          ::DeployCaddy.new.call(host:, context:, port: 5555)
+        end
+      end
+
+      class ReloadCaddy < Dry::CLI::Command
+        desc "reload a caddy configuration"
+
+        argument :host, required: true, desc: "ssh user@host"
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(host:, context:)
+          ::ReloadCaddy.new.call(host:, context:)
+        end
+      end
+
+      class DeployCaddy < Dry::CLI::Command
+        desc "deploy a new caddy image"
+
+        argument :host, required: true, desc: "ssh user@host"
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(host:, context:)
+          ::DeployCaddy.new.call(host:, context:, port: 555)
         end
       end
 
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "bootstrap", Bootstrap
+      register "caddy deploy", DeployCaddy
+      register "caddy reload", ReloadCaddy
     end
   end
 end
@@ -80,7 +106,6 @@ class SetupDocker < Dry::CLI::Command
   end
 
   def install_docker(host)
-    puts host
     if success?("ssh", host, "command -v docker")
       log "Docker already installed on #{host}, skipping"
     else
@@ -136,9 +161,109 @@ class SetupDocker < Dry::CLI::Command
   end
 end
 
-class UpdateCaddy
+class DeployCaddy
+  include Shell
+
+  def call(host:, context:, port:)
+    network = "swarm-network"
+    caddy_image = image_tag(port)
+
+    build_caddy(host, caddy_image)
+    publish(host, port, caddy_image)
+    start_caddy(context, network, caddy_image)
+
+    log "Caddy update complete"
+  end
+
+  private
+
+  # Tag by content (git SHA, same convention bin/deploy uses for app
+  # images) so every build gets a distinct tag. A reused static tag (e.g.
+  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
+  # since Swarm only notices a change when the tag itself differs.
+  def image_tag(port)
+    dir = Pathname.join(__dir__, "../").to_s
+
+    tag = begin
+      capture("git", "-C", dir, "rev-parse", "--short", "HEAD").strip
+    rescue StandardError
+      Time.now.to_i.to_s
+    end
+
+    "localhost:#{port}/caddy:#{tag}"
+  end
+
+  def build_caddy(host, tag)
+    dir = Pathname.join(__dir__, "../", "deploy", "caddy").to_s
+
+    # Build on THIS machine, not the VM's daemon, so the host never spends
+    # its own CPU/disk compiling images.
+    log "Building front-door Caddy image locally (#{tag})"
+    run("docker", "build", "-t", tag, dir)
+
+    log "Ensuring /srv/cast/caddy/branches exists and Caddyfile is current"
+    run("ssh", host, "mkdir -p /srv/cast/caddy/branches")
+    run("scp", File.join(dir, "Caddyfile"), "#{host}:/srv/cast/caddy/Caddyfile")
+  end
+
+  def publish(host, port, caddy_image)
+    log "Tunneling to the registry and pushing"
+    tunnel_pid = Process.spawn("ssh", "-NL", "#{port}:localhost:#{port}", host)
+    begin
+      sleep 1 # give the tunnel a moment to come up before pushing through it
+      run("docker", "push", caddy_image)
+    ensure
+      Process.kill("TERM", tunnel_pid)
+      Process.wait(tunnel_pid)
+    end
+  end
+
+  def start_caddy(context, network, caddy_image)
+    docker = ["docker", "--context", context]
+    services = capture(*docker, "service", "ls", "--format", "{{.Name}}").lines(chomp: true)
+    if services.include?("caddy")
+      log "Rolling out #{caddy_image} to existing caddy service"
+      run(*docker, "service", "update", "--image", caddy_image, "caddy")
+    else
+      log "Creating caddy service"
+      run(*docker, "service", "create",
+          "--name", "caddy",
+          "--network", network,
+          "--publish", "published=80,target=80",
+          "--publish", "published=443,target=443",
+          "--mount", "type=volume,source=caddy-data,destination=/data",
+          "--mount", "type=volume,source=caddy-config,destination=/config",
+          "--mount", "type=bind,source=/srv/cast/caddy/Caddyfile,destination=/etc/caddy/Caddyfile",
+          "--mount", "type=bind,source=/srv/cast/caddy/branches,destination=/etc/caddy/branches",
+          caddy_image)
+    end
+  end
 end
 
+class ReloadCaddy
+  include Shell
+
+  def call(host:, context:)
+    docker = ["docker", "--context", context]
+    caddy_service = "caddy"
+
+    log "Copying Caddyfile to #{host}:/srv/cast/caddy/Caddyfile"
+    run("ssh", host, "mkdir -p /srv/cast/caddy/branches")
+    run("scp", File.join(__dir__, "..", "deploy", "caddy", "Caddyfile"), "#{host}:/srv/cast/caddy/Caddyfile")
+
+    container_id = capture(*docker, "ps", "--filter", "name=#{caddy_service}", "--format", "{{.ID}}")
+                   .lines(chomp: true).first
+
+    unless container_id
+      abort "No running #{caddy_service} container found -- deploy it first with deploy/update-caddy"
+    end
+
+    log "Reloading Caddy config (zero-downtime)"
+    run(*docker, "exec", container_id, "caddy", "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
+
+    log "Reload complete"
+  end
+end
 
 Dry::CLI.new(Deploy::CLI::Commands).call
 
