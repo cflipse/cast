@@ -1,0 +1,145 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "dry/cli"
+require "open3"
+
+module Deploy
+  module CLI
+    module Commands
+      extend Dry::CLI::Registry
+
+      class Version < Dry::CLI::Command
+        desc "show current version"
+        def call(*) = puts "0.1.0"
+      end
+
+      class Bootstrap < Dry::CLI::Command
+        desc "set up a new server"
+
+        argument :host, required: true, desc: "ssh user@host"
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(host:, context:, **)
+          Shell.log "Creating /srv/cast"
+          Shell.run("ssh", host, 'sudo mkdir -p /srv/cast && sudo chown "$(id -u):$(id -g)" /srv/cast')
+
+          SetupDocker.new.call(host:, context:)
+        end
+      end
+
+      register "version", Version, aliases: ["v", "-v", "--version"]
+      register "bootstrap", Bootstrap
+    end
+  end
+end
+
+module Shell
+  module_function
+
+  def log(message) = puts "==> #{message}"
+  def run(*cmd)
+    puts "+ #{cmd.join(' ')}"
+    system(*cmd) || raise("command failed: #{cmd.join(' ')}")
+  end
+
+  def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
+
+  def capture(*cmd)
+    out, status = Open3.capture2(*cmd)
+    raise "command failed: #{cmd.join(' ')}" unless status.success?
+
+    out
+  end
+end
+
+class SetupDocker < Dry::CLI::Command
+  include Shell
+
+  argument :host, required: true, desc: "ssh user@host"
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(host:, context:)
+    docker = ["docker", "--context", context]
+
+    ip = public_ip(host)
+    network = "swarm-network"
+
+    install_docker(host)
+    create_docker_context(host, context)
+
+    docker_swarm_init(docker, ip)
+    create_overlay_network(docker, network)
+    deploy_registry(docker, network, 5555)
+  end
+
+  private
+
+  def public_ip(host)
+    capture("ssh", host, "curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address").strip
+  end
+
+  def install_docker(host)
+    puts host
+    if success?("ssh", host, "command -v docker")
+      log "Docker already installed on #{host}, skipping"
+    else
+      log "Installing Docker on #{host}"
+      run("ssh", host, "curl -fsSL https://get.docker.com | sh")
+    end
+  end
+
+  def create_docker_context(host, context)
+    if success?("docker", "context", "inspect", context)
+      log "Docker context #{context} already exists, skipping"
+    else
+      log "Creating docker context #{context} -> #{host}"
+      run("docker", "context", "create", context, "--docker", "host=ssh://#{host}")
+    end
+  end
+
+  def docker_swarm_init(docker, ip)
+    swarm_state = capture(*docker, "info", "--format", "{{.Swarm.LocalNodeState}}").strip
+    if swarm_state == "active"
+      log "Already part of a swarm, skipping swarm init"
+    else
+      log "Initializing swarm"
+      run(*docker, "swarm", "init", "--advertise-addr", ip)
+    end
+  end
+
+  def create_overlay_network(docker, name)
+
+    networks = capture(*docker, "network", "ls", "--format", "{{.Name}}").lines(chomp: true)
+    if networks.include?(name)
+      log "Network #{name} already exists, skipping"
+    else
+      log "Creating overlay network #{name}"
+      run(*docker, "network", "create", "--driver", "overlay", "--attachable", name)
+    end
+  end
+
+  def deploy_registry(docker, network, port)
+    services = capture(*docker, "service", "ls", "--format", "{{.Name}}").lines(chomp: true)
+    if services.include?("registry")
+      log "Service registry already running, skipping"
+    else
+      log "Deploying registry on 127.0.0.1:#{port}"
+      run(*docker, "service", "create",
+          "--name", "registry",
+          "--network", network,
+          "--publish", "published=#{port},target=5000,mode=host",
+          "--constraint", "node.role==manager",
+          "--mount", "type=volume,source=registry-data,destination=/var/lib/registry",
+          "registry:2")
+    end
+  end
+end
+
+class UpdateCaddy
+end
+
+
+Dry::CLI.new(Deploy::CLI::Commands).call
+
+# vim:syntax=ruby
