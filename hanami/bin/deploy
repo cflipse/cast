@@ -1,0 +1,287 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "dry/cli"
+require "open3"
+require "pathname"
+
+module Constants
+  REGISTRY_PORT = 5555
+  TUNNEL_PORT = 15555
+  NETWORK = "swarm-network"
+  REGISTRY_SERVICE = "registry"
+  CADDY_SERVICE = "caddy"
+  CAST_ROOT = "/srv/cast"
+end
+
+module Shell
+  module_function
+
+  def log(message) = puts "==> #{message}"
+  def run(*cmd)
+    puts "+ #{cmd.join(' ')}"
+    system(*cmd) || raise("command failed: #{cmd.join(' ')}")
+  end
+
+  def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
+
+  def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
+
+  def service_running?(context, name)
+    docker_ls(context, "service", "Name")
+      .lines(chomp: true)
+      .include?(name)
+  end
+
+  def network_running?(context, name)
+    docker_ls(context, "network", "Name")
+      .lines(chomp: true)
+      .include?(name)
+  end
+
+  def docker(context, *cmd) = run("docker", "--context", context, *cmd)
+  def docker_read(context, *args) = capture("docker", "--context", context, *args)
+
+  def docker_ls(context, type, field)
+    docker_read(context, type, "ls", "--format", "{{.#{field}}}")
+  end
+
+  def capture(*cmd)
+    out, status = Open3.capture2(*cmd)
+    raise "command failed: #{cmd.join(' ')}" unless status.success?
+
+    out
+  end
+end
+
+class SetupDocker < Dry::CLI::Command
+  include Shell
+  include Constants
+
+  argument :host, required: true, desc: "ssh user@host"
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(host:, context:)
+    ip = public_ip(host)
+
+    install_docker(host)
+    create_docker_context(host, context)
+
+    docker_swarm_init(context, ip)
+    create_overlay_network(context)
+    deploy_registry(context)
+  end
+
+  private
+
+  def public_ip(host)
+    capture("ssh", host, "curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address").strip
+  end
+
+  def install_docker(host)
+    if success?("ssh", host, "command -v docker")
+      log "Docker already installed on #{host}, skipping"
+    else
+      log "Installing Docker on #{host}"
+      run("ssh", host, "curl -fsSL https://get.docker.com | sh")
+    end
+  end
+
+  def create_docker_context(host, context)
+    # Always reset: recreating a context is cheap, and unconditionally
+    # doing so avoids a stale context silently pointing at a server that
+    # no longer exists (e.g. after swapping in a replacement droplet).
+    run("docker", "context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
+
+    log "Creating docker context #{context} -> #{host}"
+    run("docker", "context", "create", context, "--docker", "host=ssh://#{host}")
+  end
+
+  def docker_swarm_init(context, ip)
+    swarm_state = docker_read(context, "info", "--format", "{{.Swarm.LocalNodeState}}").strip
+
+    if swarm_state == "active"
+      log "Already part of a swarm, skipping swarm init"
+    else
+      log "Initializing swarm"
+      docker(context, "swarm", "init", "--advertise-addr", ip)
+    end
+  end
+
+  def create_overlay_network(context)
+    if network_running?(context, NETWORK)
+      log "Network #{NETWORK} already exists, skipping"
+    else
+      log "Creating overlay network #{NETWORK}"
+      docker(context, "network", "create", "--driver", "overlay", "--attachable", NETWORK)
+    end
+  end
+
+  def deploy_registry(context)
+    if service_running?(context, REGISTRY_SERVICE)
+      log "Service #{REGISTRY_SERVICE} already running, skipping"
+    else
+      log "Deploying registry on 127.0.0.1:#{REGISTRY_PORT}"
+      docker(context, "service", "create",
+          "--name", REGISTRY_SERVICE,
+          "--network", NETWORK,
+          "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
+          "--constraint", "node.role==manager",
+          "--mount", "type=volume,source=registry-data,destination=/var/lib/registry",
+          "registry:2")
+    end
+  end
+end
+
+class DeployCaddy < Dry::CLI::Command
+  include Shell
+  include Constants
+
+  desc "deploy a new caddy image"
+
+  argument :host, required: true, desc: "ssh user@host"
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(host:, context:)
+    tag = image_version
+
+    # Two different refs for the same underlying image: the registry only
+    # keys off repository/tag, not the host:port a client used to reach it,
+    # so the local push and the remote pull can address it through
+    # different ports without conflict.
+    local_image = "localhost:#{TUNNEL_PORT}/caddy:#{tag}"
+    remote_image = "localhost:#{REGISTRY_PORT}/caddy:#{tag}"
+
+    build_caddy(host, local_image)
+    publish(host, local_image)
+    start_caddy(context, remote_image)
+
+    log "Caddy update complete"
+  end
+
+  private
+
+  # Tag by content (git SHA, same convention bin/deploy uses for app
+  # images) so every build gets a distinct tag. A reused static tag (e.g.
+  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
+  # since Swarm only notices a change when the tag itself differs.
+  def image_version
+    capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
+  rescue StandardError
+    Time.now.to_i.to_s
+  end
+
+  def build_caddy(host, local_image)
+    dir = root("deploy", "caddy")
+
+    # Build on THIS machine, not the VM's daemon, so the host never spends
+    # its own CPU/disk compiling images.
+    log "Building front-door Caddy image locally (#{local_image})"
+    run("docker", "build", "-t", local_image, dir)
+
+    log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
+    run("ssh", host, "mkdir -p #{CAST_ROOT}/caddy/branches")
+    run("scp", File.join(dir, "Caddyfile"), "#{host}:#{CAST_ROOT}/caddy/Caddyfile")
+  end
+
+  def publish(host, local_image)
+    log "Tunneling to the registry and pushing"
+    # Local side uses TUNNEL_PORT (not REGISTRY_PORT) since some other
+    # process on this machine may already be bound to REGISTRY_PORT.
+    tunnel_pid = Process.spawn("ssh", "-NL", "#{TUNNEL_PORT}:localhost:#{REGISTRY_PORT}", host)
+    begin
+      sleep 1 # give the tunnel a moment to come up before pushing through it
+      run("docker", "push", local_image)
+    ensure
+      Process.kill("TERM", tunnel_pid)
+      Process.wait(tunnel_pid)
+    end
+  end
+
+  def start_caddy(context, remote_image)
+    if service_running?(context, "caddy")
+      log "Rolling out #{remote_image} to existing caddy service"
+      docker(context, "service", "update", "--image", remote_image, "caddy")
+    else
+      log "Creating caddy service"
+      docker(context, "service", "create",
+          "--name", CADDY_SERVICE,
+          "--network", NETWORK,
+          "--publish", "published=80,target=80",
+          "--publish", "published=443,target=443",
+          "--mount", "type=volume,source=caddy-data,destination=/data",
+          "--mount", "type=volume,source=caddy-config,destination=/config",
+          "--mount", "type=bind,source=#{CAST_ROOT}/caddy/Caddyfile,destination=/etc/caddy/Caddyfile",
+          "--mount", "type=bind,source=#{CAST_ROOT}/caddy/branches,destination=/etc/caddy/branches",
+          remote_image)
+    end
+  end
+end
+
+class ReloadCaddy < Dry::CLI::Command
+  include Shell
+  include Constants
+
+  desc "reload a caddy configuration"
+
+  argument :host, required: true, desc: "ssh user@host"
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(host:, context:)
+    log "Copying Caddyfile to #{host}:#{CAST_ROOT}/caddy/Caddyfile"
+    run("ssh", host, "mkdir -p #{CAST_ROOT}/caddy/branches")
+    run("scp", root("deploy", "caddy", "Caddyfile"), "#{host}:#{CAST_ROOT}/caddy/Caddyfile")
+
+    container_id = docker_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
+      .lines(chomp: true).first
+
+    unless container_id
+      abort "No running #{CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
+    end
+
+    log "Reloading Caddy config (zero-downtime)"
+    docker(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
+
+    log "Reload complete"
+  end
+end
+
+module Deploy
+  module CLI
+    module Commands
+      extend Dry::CLI::Registry
+
+      class Version < Dry::CLI::Command
+        desc "show current version"
+        def call(*) = puts "0.1.0"
+      end
+
+      class Bootstrap < Dry::CLI::Command
+        include Constants
+
+        desc "set up a new server"
+
+        argument :host, required: true, desc: "ssh user@host"
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(host:, context:)
+          Shell.log "Creating #{CAST_ROOT}"
+          Shell.run("ssh", host, "sudo mkdir -p #{CAST_ROOT} && sudo chown \"$(id -u):$(id -g)\" #{CAST_ROOT}")
+
+          SetupDocker.new.call(host:, context:)
+          DeployCaddy.new.call(host:, context:)
+        end
+      end
+
+      register "version", Version, aliases: ["v", "-v", "--version"]
+      register "bootstrap", Bootstrap
+      register "swarm install", ::SetupDocker
+      register "caddy deploy", ::DeployCaddy
+      register "caddy reload", ::ReloadCaddy
+    end
+  end
+end
+
+Dry::CLI.new(Deploy::CLI::Commands).call
+
+# vim:syntax=ruby
