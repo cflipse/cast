@@ -262,6 +262,8 @@ GEM
       net-protocol
     net-protocol (0.4.0)
       timeout
+    net-scp (1.2.1)
+      net-ssh (>= 2.6.5)
     net-smtp (0.5.2)
       net-protocol
     net-ssh (8.0.1)
@@ -463,6 +465,7 @@ DEPENDENCIES
   hanami-webconsole (~> 3.0.0)
   i18n (~> 1.14)
   kramdown
+  net-scp
   net-ssh
   pry
   puma (>= 7.1)
@@ -572,6 +575,7 @@ CHECKSUMS
   net-imap (0.6.8) sha256=eb30bb62227b64a3af6b518b04b2375113d69f68f15de59b0193b07d98acf6d9
   net-pop (0.1.2) sha256=848b4e982013c15b2f0382792268763b748cce91c9e91e36b0f27ed26420dff3
   net-protocol (0.4.0) sha256=f9f90c8c6f64794a45160bf422177a336db12809de3beeeaa26b88fcd2e8c853
+  net-scp (1.2.1) sha256=928ca046246bdbfe304313c903bab95e7b711938ceff4a2c896b91ab59c6122c
   net-smtp (0.5.2) sha256=35103cc04d6b2d94632f9928ede07483c24b70b9c0db1f231fea43909b678f3c
   net-ssh (8.0.1) sha256=6316c74a66abe867755d56b710a087d317140ac6b9dcdff81c85befcfaeb44d7
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1

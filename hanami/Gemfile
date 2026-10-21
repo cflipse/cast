@@ -49,6 +49,7 @@ end
 
 group :cli do
   gem "net-ssh"
+  gem "net-scp"
 end
 
 group :cli, :development do
