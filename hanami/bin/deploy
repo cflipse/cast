@@ -2,13 +2,13 @@
 
 require "bundler/setup"
 require "dry/cli"
+require "net/ssh"
 
 require "open3"
 require "pathname"
 
 module Constants
   REGISTRY_PORT = 5555
-  TUNNEL_PORT = 15555
   NETWORK = "swarm-network"
   REGISTRY_SERVICE = "registry"
   CADDY_SERVICE = "caddy"
@@ -150,7 +150,7 @@ class DeployCaddy < Dry::CLI::Command
     # keys off repository/tag, not the host:port a client used to reach it,
     # so the local push and the remote pull can address it through
     # different ports without conflict.
-    local_image = "localhost:#{TUNNEL_PORT}/caddy:#{tag}"
+    local_image = "caddy:#{tag}"
     remote_image = "localhost:#{REGISTRY_PORT}/caddy:#{tag}"
 
     build_caddy(host, local_image)
@@ -185,17 +185,40 @@ class DeployCaddy < Dry::CLI::Command
     run("scp", File.join(dir, "Caddyfile"), "#{host}:#{CAST_ROOT}/caddy/Caddyfile")
   end
 
+  def tunnel(user_host, remote_port)
+    user, host = user_host.split("@")
+
+    Net::SSH.start(host, user) do |ssh|
+      port = ssh.forward.local(0, "localhost", remote_port)
+
+      running = true
+      # keep the connection flowing in the background
+      worker = Thread.new { ssh.loop(0.1) { running }}
+
+      begin
+        yield port
+      ensure
+        running = false
+        worker.value
+      end
+    end
+  end
+
   def publish(host, local_image)
     log "Tunneling to the registry and pushing"
     # Local side uses TUNNEL_PORT (not REGISTRY_PORT) since some other
     # process on this machine may already be bound to REGISTRY_PORT.
-    tunnel_pid = Process.spawn("ssh", "-NL", "#{TUNNEL_PORT}:localhost:#{REGISTRY_PORT}", host)
+
     begin
-      sleep 1 # give the tunnel a moment to come up before pushing through it
-      run("docker", "push", local_image)
-    ensure
-      Process.kill("TERM", tunnel_pid)
-      Process.wait(tunnel_pid)
+      tunnel host, REGISTRY_PORT do |port|
+        image = "localhost:#{port}/#{local_image}"
+        begin
+          run "docker", "tag", local_image, image
+          run "docker", "push", image 
+        ensure
+          run "docker", "rm", "-f", image
+        end
+      end
     end
   end
 

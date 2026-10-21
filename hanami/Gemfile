@@ -47,6 +47,10 @@ group :development, :test do
   gem "vite_ruby"
 end
 
+group :cli do
+  gem "net-ssh"
+end
+
 group :cli, :development do
   gem "hanami-reloader", "~> 3.0.0"
 end
