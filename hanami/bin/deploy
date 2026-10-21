@@ -2,6 +2,7 @@
 
 require "bundler/setup"
 require "dry/cli"
+
 require "open3"
 require "pathname"
 
@@ -246,6 +247,66 @@ class ReloadCaddy < Dry::CLI::Command
   end
 end
 
+class Secrets < Dry::CLI::Command
+  include Shell
+  include Constants
+
+  desc "add secrets to docker swarm"
+
+  argument :host, required: true, desc: "ssh user@host"
+  argument :item, required: true, desc: "bitwarden secret"
+  option :env, required: true, desc: "environment being deployed (main, a branch, ...)"
+  option :template, default: "deploy/env.erb", desc: "ERB env template"
+  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
+  option :context, default: "cast", desc: "local docker context"
+
+
+  def prepare
+    require "shellwords"
+    require "digest"
+    require "erb"
+    require "json"
+  end
+
+  def call(host:, item:, env:, template:, dry_run:, context:)
+    prepare
+
+    fields = fetch_fields(item)
+    rendered = ERB.new(File.read(root(template)), trim_mode: "-")
+                  .result(Renderer.new(env, fields).binding_for_erb)
+
+    if dry_run
+      rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
+      return
+    end
+
+    name = "cast_#{env}_env_#{Digest::SHA256.hexdigest(rendered)[0, 8]}"
+
+    if success?("docker", "--context", context, "secret", "inspect", name)
+      log "Secret #{name} already exists, skipping"
+    else
+      log "Creating secret #{name}"
+      out, status = Open3.capture2e("docker", "--context", context, "secret", "create", name, "-", stdin_data: rendered)
+      raise "secret create failed: #{out}" unless status.success?
+    end
+
+    puts "ENV_SECRET=#{name}"
+  end
+
+  private
+
+  Renderer = Data.define(:env, :fields) do
+    def secret(name) = fields.fetch(name.to_s) { raise KeyError, "Bitwarden item has no custom field #{name.inspect}" }
+    def sh(value) = value.to_s.shellescape
+    def binding_for_erb = binding
+  end
+
+  def fetch_fields(item)
+    json = JSON.parse(capture("bw", "get", "item", item))
+    (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
+  end
+end
+
 module Deploy
   module CLI
     module Commands
@@ -278,6 +339,7 @@ module Deploy
       register "swarm install", ::SetupDocker
       register "caddy deploy", ::DeployCaddy
       register "caddy reload", ::ReloadCaddy
+      register "secrets sync", ::Secrets
     end
   end
 end
