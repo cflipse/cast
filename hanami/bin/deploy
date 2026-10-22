@@ -323,32 +323,55 @@ class Secrets < Dry::CLI::Command
     require "digest"
     require "erb"
     require "json"
+    require "time"
   end
 
   def call(host:, item:, template:, dry_run:, context:)
     prepare
 
     raise "KeyError" unless item.start_with? "cast."
-    slug = item.gsub('.', '-')
 
     fields = fetch_fields(item)
     rendered = ERB.new(File.read(root(template)), trim_mode: "-")
                   .result(Renderer.new(fields).binding_for_erb)
 
-    name = "#{slug}_#{Digest::SHA256.hexdigest(rendered)[0, 8]}"
+    hex = Digest::SHA256.hexdigest(rendered)[..16]
+
+    existing = swarm_read(context, "secret", "ls",
+      "--filter", "label=cast.secrets=#{item}",
+      "--format", "{{.Name}}\t{{.Labels}}"
+    )
+
+    secrets = existing.lines(chomp: true).to_h do |line|
+      sec, labels = line.split("\t", 2)
+      [sec, labels.split(",").to_h { it.split("=", 2) }]
+    end
+
+    current = secrets.keys.max
+    exists = secrets.dig(current, "cast.hash") == hex
 
     if dry_run
-      puts "==> #{name}"
+      puts "==> #{hex}"
       rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
+
+      puts "\n==> exists upstream #{current}" if exists
       return
     end
 
+    name = current
 
-    if success?("docker", "--context", context, "secret", "inspect", name)
-      log "Secret #{name} already exists, skipping"
+    if exists
+      log "Secret #{current} (#{hex}) already exists, skipping"
     else
+      name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
       log "Creating secret #{name}"
-      out, status = Open3.capture2e("docker", "--context", context, "secret", "create", name, "-", stdin_data: rendered)
+
+      out, status = Open3.capture2e("docker", "--context", context,
+        "secret", "create", name,
+        "--label", "cast.secrets=#{item}",
+        "--label", "cast.hash=#{hex}",
+        "-", stdin_data: rendered)
+
       raise "secret create failed: #{out}" unless status.success?
     end
 
