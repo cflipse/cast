@@ -30,23 +30,21 @@ module Shell
   def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
 
   def service_running?(context, name)
-    docker_ls(context, "service", "Name")
+    swarm_read(context, "service", "ls", "--format", "{{.Name}}")
       .lines(chomp: true)
       .include?(name)
   end
 
   def network_running?(context, name)
-    docker_ls(context, "network", "Name")
+    swarm_read(context, "network", "ls", "--format", "{{.Name}}")
       .lines(chomp: true)
       .include?(name)
   end
 
-  def docker(context, *cmd) = run("docker", "--context", context, *cmd)
-  def docker_read(context, *args) = capture("docker", "--context", context, *args)
+  def docker(*cmd) = run("docker", *cmd)
 
-  def docker_ls(context, type, field)
-    docker_read(context, type, "ls", "--format", "{{.#{field}}}")
-  end
+  def swarm(context, *cmd) = run("docker", "--context", context, *cmd)
+  def swarm_read(context, *args) = capture("docker", "--context", context, *args)
 
   def capture(*cmd)
     out, status = Open3.capture2(*cmd)
@@ -124,20 +122,20 @@ class SetupDocker < Dry::CLI::Command
     # Always reset: recreating a context is cheap, and unconditionally
     # doing so avoids a stale context silently pointing at a server that
     # no longer exists (e.g. after swapping in a replacement droplet).
-    run("docker", "context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
+    docker("context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
 
     log "Creating docker context #{context} -> #{host}"
-    run("docker", "context", "create", context, "--docker", "host=ssh://#{host}")
+    docker("context", "create", context, "--docker", "host=ssh://#{host}")
   end
 
   def docker_swarm_init(context, ip)
-    swarm_state = docker_read(context, "info", "--format", "{{.Swarm.LocalNodeState}}").strip
+    swarm_state = swarm_read(context, "info", "--format", "{{.Swarm.LocalNodeState}}").strip
 
     if swarm_state == "active"
       log "Already part of a swarm, skipping swarm init"
     else
       log "Initializing swarm"
-      docker(context, "swarm", "init", "--advertise-addr", ip)
+      swarm(context, "swarm", "init", "--advertise-addr", ip)
     end
   end
 
@@ -146,7 +144,7 @@ class SetupDocker < Dry::CLI::Command
       log "Network #{NETWORK} already exists, skipping"
     else
       log "Creating overlay network #{NETWORK}"
-      docker(context, "network", "create", "--driver", "overlay", "--attachable", NETWORK)
+      swarm(context, "network", "create", "--driver", "overlay", "--attachable", NETWORK)
     end
   end
 
@@ -155,7 +153,7 @@ class SetupDocker < Dry::CLI::Command
       log "Service #{REGISTRY_SERVICE} already running, skipping"
     else
       log "Deploying registry on 127.0.0.1:#{REGISTRY_PORT}"
-      docker(context, "service", "create",
+      swarm(context, "service", "create",
           "--name", REGISTRY_SERVICE,
           "--network", NETWORK,
           "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
@@ -215,7 +213,7 @@ class DeployCaddy < Dry::CLI::Command
     # Build on THIS machine, not the VM's daemon, so the host never spends
     # its own CPU/disk compiling images.
     log "Building front-door Caddy image locally (#{local_image})"
-    run("docker", "build", "-t", local_image, dir)
+    docker("build", "-t", local_image, dir)
   end
 
   def push_caddyfile(ssh)
@@ -236,10 +234,10 @@ class DeployCaddy < Dry::CLI::Command
       SSH.tunnel(ssh, REGISTRY_PORT) do |port|
         image = "localhost:#{port}/#{local_image}"
         begin
-          run "docker", "tag", local_image, image
-          run "docker", "push", image 
+          docker "tag", local_image, image
+          docker "push", image 
         ensure
-          run "docker", "rm", "-f", image
+          docker "rm", "-f", image
         end
       end
     end
@@ -248,10 +246,10 @@ class DeployCaddy < Dry::CLI::Command
   def start_caddy(context, remote_image)
     if service_running?(context, "caddy")
       log "Rolling out #{remote_image} to existing caddy service"
-      docker(context, "service", "update", "--image", remote_image, "caddy")
+      swarm(context, "service", "update", "--image", remote_image, "caddy")
     else
       log "Creating caddy service"
-      docker(context, "service", "create",
+      swarm(context, "service", "create",
           "--name", CADDY_SERVICE,
           "--network", NETWORK,
           "--publish", "published=80,target=80",
@@ -293,7 +291,7 @@ class ReloadCaddy < Dry::CLI::Command
   end
 
   def restart_caddy(context)
-    container_id = docker_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
+    container_id = swarm_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
       .lines(chomp: true).first
 
     unless container_id
@@ -301,7 +299,7 @@ class ReloadCaddy < Dry::CLI::Command
     end
 
     log "Reloading Caddy config (zero-downtime)"
-    docker(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
+    swarm(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
 
     log "Reload complete"
   end
