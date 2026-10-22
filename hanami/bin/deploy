@@ -313,7 +313,7 @@ class Secrets < Dry::CLI::Command
 
   argument :host, required: true, desc: "ssh user@host"
   argument :item, required: true, desc: "bitwarden secret"
-  option :env, required: true, desc: "environment being deployed (main, a branch, ...)"
+  option :deployment, required: true, desc: "environment being deployed (main, a branch, ...)"
   option :template, default: "deploy/env.erb", desc: "ERB env template"
   option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
   option :context, default: "cast", desc: "local docker context"
@@ -326,19 +326,19 @@ class Secrets < Dry::CLI::Command
     require "json"
   end
 
-  def call(host:, item:, env:, template:, dry_run:, context:)
+  def call(host:, item:, deployment:, template:, dry_run:, context:)
     prepare
 
     fields = fetch_fields(item)
     rendered = ERB.new(File.read(root(template)), trim_mode: "-")
-                  .result(Renderer.new(env, fields).binding_for_erb)
+                  .result(Renderer.new(deployment, fields).binding_for_erb)
 
     if dry_run
       rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
       return
     end
 
-    name = "cast_#{env}_env_#{Digest::SHA256.hexdigest(rendered)[0, 8]}"
+    name = "cast_#{deployment}_#{Digest::SHA256.hexdigest(rendered)[0, 8]}"
 
     if success?("docker", "--context", context, "secret", "inspect", name)
       log "Secret #{name} already exists, skipping"
@@ -353,7 +353,7 @@ class Secrets < Dry::CLI::Command
 
   private
 
-  Renderer = Data.define(:env, :fields) do
+  Renderer = Data.define(:deployment, :fields) do
     def secret(name) = fields.fetch(name.to_s) { raise KeyError, "Bitwarden item has no custom field #{name.inspect}" }
     def sh(value) = value.to_s.shellescape
     def binding_for_erb = binding
