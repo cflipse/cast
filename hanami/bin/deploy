@@ -46,6 +46,20 @@ module Shell
   def swarm(context, *cmd) = run("docker", "--context", context, *cmd)
   def swarm_read(context, *args) = capture("docker", "--context", context, *args)
 
+  def swarm_secrets(context, item)
+    existing = swarm_read(context, "secret", "ls",
+      "--filter", "label=cast.secrets=#{item}",
+      "--format", "{{.Name}}\t{{.Labels}}"
+    )
+
+    secrets = existing.lines(chomp: true).to_h do |line|
+      sec, labels = line.split("\t", 2)
+      [sec, labels.split(",").to_h { it.split("=", 2) }]
+    end
+
+    [secrets.keys.max, secrets]
+  end
+
   def capture(*cmd)
     out, status = Open3.capture2(*cmd)
     raise "command failed: #{cmd.join(' ')}" unless status.success?
@@ -337,17 +351,7 @@ class Secrets < Dry::CLI::Command
 
     hex = Digest::SHA256.hexdigest(rendered)[..16]
 
-    existing = swarm_read(context, "secret", "ls",
-      "--filter", "label=cast.secrets=#{item}",
-      "--format", "{{.Name}}\t{{.Labels}}"
-    )
-
-    secrets = existing.lines(chomp: true).to_h do |line|
-      sec, labels = line.split("\t", 2)
-      [sec, labels.split(",").to_h { it.split("=", 2) }]
-    end
-
-    current = secrets.keys.max
+    current, secrets = swarm_secrets(context, item)
     exists = secrets.dig(current, "cast.hash") == hex
 
     if dry_run
@@ -359,20 +363,10 @@ class Secrets < Dry::CLI::Command
     end
 
     name = current
-
     if exists
       log "Secret #{current} (#{hex}) already exists, skipping"
     else
-      name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
-      log "Creating secret #{name}"
-
-      out, status = Open3.capture2e("docker", "--context", context,
-        "secret", "create", name,
-        "--label", "cast.secrets=#{item}",
-        "--label", "cast.hash=#{hex}",
-        "-", stdin_data: rendered)
-
-      raise "secret create failed: #{out}" unless status.success?
+      name = update_secret(item, hex, rendered)
     end
 
     puts "ENV_SECRET=#{name}"
@@ -390,6 +384,23 @@ class Secrets < Dry::CLI::Command
     json = JSON.parse(capture("bw", "get", "item", item))
     (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
   end
+
+  def update_secret(item, hex, rendered)
+    name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
+    log "Creating secret #{name}"
+
+    out, status = Open3.capture2e("docker", "--context", context,
+      "secret", "create", name,
+      "--label", "cast.secrets=#{item}",
+      "--label", "cast.hash=#{hex}",
+      "-", stdin_data: rendered)
+
+    raise "secret create failed: #{out}" unless status.success?
+
+    name
+  end
+
+
 end
 
 module Deploy
