@@ -435,6 +435,7 @@ module Deploy
     module Production
       extend self
 
+      def name = "production"
       def vault = "cast.production"
       def slug = "production"
       def domain = "cast.athas.org"
@@ -445,14 +446,14 @@ module Deploy
       def domain = "#{slug}.cast.athas.org"
     end
 
-    def self.for(name)  
-      return Production if name == "production" 
+    def self.for(name, production: false)
+      return Production if production
 
-      slug = branch.to_s.downcase.gsub(/[^:alnum:]/, '-').strip
+      slug = branch.to_s.downcase.gsub(/[^[:alnum:]]/, '-')
       Staging.new(name, slug)
     end
 
-    def self.branch = Shell.run("git", "branch", "--show-current")
+    def self.branch = Shell.capture("git", "branch", "--show-current").strip
   end
 
   module CLI
