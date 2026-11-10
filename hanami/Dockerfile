@@ -26,6 +26,7 @@ RUN apk add --no-cache \
   libffi-dev \
   nodejs \
   npm \
+  openssl-dev \
   taglib-dev
 
 # These take longer to build

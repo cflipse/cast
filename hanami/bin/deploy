@@ -23,7 +23,7 @@ module Shell
 
   def run(*cmd)
     puts "+ #{cmd.join(' ')}"
-    system(*cmd) || raise("command failed: #{cmd.join(' ')}")
+    capture(*cmd)
   end
 
   # Tag by content (git SHA, same convention bin/deploy uses for app
@@ -427,8 +427,29 @@ class RenderStack < Dry::CLI::Command
   end
 end
 
-module Deploy
+class DeployCommand < Dry::CLI::Command
+  include Shell
 
+  desc "deploy the current branch"
+
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(context:)
+    config = Deploy::Config.for('staging')
+    build_image(config)
+  end
+
+  private
+
+  def build_image(config)
+    name = local_image("cast-#{config.slug}")
+
+    log("Building docker image locally: #{name}")
+    docker("buildx", "build", "--target", "production", "-t", name, ".")
+  end
+end
+
+module Deploy
   module Config
     extend self
 
@@ -486,6 +507,7 @@ module Deploy
 
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "bootstrap", Bootstrap
+      register "deploy", ::DeployCommand
       register "swarm install", ::SetupDocker
       register "caddy deploy", ::DeployCaddy
       register "caddy reload", ::ReloadCaddy
