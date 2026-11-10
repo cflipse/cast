@@ -1,0 +1,63 @@
+<%# deploy/stack.yml.erb -- locals: deployment, image, env_secret %>
+
+services:
+  app:
+    image: <%= image %>
+    secrets:
+      - source: env_file
+        target: env
+
+    environment:
+      HANAMI_ENV: production
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: sqlite:///data/cast.sqlite
+    volumes:
+      - type: bind
+        source: /srv/cast/<%= deployment %>/data
+        target: /data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2300/up"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      internal:
+      swarm-network:
+        aliases:
+          - app-<%= deployment %>
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        failure_action: rollback
+        monitor: 15s
+      rollback_config:
+        order: start-first
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - type: bind
+        source: /srv/cast/<%= deployment %>/redis
+        target: /data
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  env_file:
+    external: true
+    name: <%= env_secret %>
+
+networks:
+  internal:
+  swarm-network:
+    external: true
+

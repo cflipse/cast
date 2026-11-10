@@ -403,6 +403,34 @@ class Secrets < Dry::CLI::Command
 
 end
 
+class RenderStack < Dry::CLI::Command
+  include Constants
+  include Shell
+
+  desc "render the docker compose stack"
+
+  argument :deployment, required: true, desc: "name of the deployment stack"
+  argument :item, required: true, desc: "bitwarden secret"
+  option :context, default: "cast", desc: "local docker context"
+  option :image  # probably temporary, as the image should be 
+
+  def prepare
+    require "erb"
+  end
+
+
+
+  def call(deployment:, context:, image:, item:)
+    prepare
+
+    env_secret, _ = swarm_secrets(context, item)
+
+    template = File.read(root("deploy", "stack.yml.erb"))
+
+    puts ERB.new(template, trim_mode: "-").result(binding)
+  end
+end
+
 module Deploy
   module CLI
     module Commands
@@ -438,6 +466,7 @@ module Deploy
       register "caddy deploy", ::DeployCaddy
       register "caddy reload", ::ReloadCaddy
       register "secrets sync", ::Secrets
+      register "stack render", ::RenderStack
     end
   end
 end
