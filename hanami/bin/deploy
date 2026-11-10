@@ -21,9 +21,9 @@ module Shell
 
   def log(message) = puts "==> #{message}"
 
-  def run(*cmd)
+  def run(*cmd, **opts)
     puts "+ #{cmd.join(' ')}"
-    capture(*cmd)
+    capture(*cmd, **opts)
   end
 
   # Tag by content (git SHA, same convention bin/deploy uses for app
@@ -34,6 +34,19 @@ module Shell
     capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
   rescue StandardError
     Time.now.to_i.to_s
+  end
+
+  def stream(*cmd, stdin_data:)
+    puts "+ #{cmd.join(' ')}"
+
+    r, w = IO.pipe
+    pid = Process.spawn(*cmd, in: r)
+    r.close
+    w.write(stdin_data)
+    w.close
+    _, status = Process.wait2(pid)
+
+    raise "command failed: #{cmd.join(' ')}" unless status.success?
   end
 
   def local_image(name) = [name, image_version].join(":")
@@ -55,11 +68,11 @@ module Shell
       .include?(name)
   end
 
-  def docker(*cmd) = run("docker", *cmd)
+  def docker(*cmd, **opts) = run("docker", *cmd, **opts)
   def host(context) = capture("docker", "context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}").strip.split("//",2).last
 
-  def swarm(context, *cmd) = run("docker", "--context", context, *cmd)
-  def swarm_read(context, *args) = capture("docker", "--context", context, *args)
+  def swarm(context, *cmd, **opts) = run("docker", "--context", context, *cmd, **opts)
+  def swarm_read(context, *args, **opts) = capture("docker", "--context", context, *args, **opts)
 
   def swarm_secrets(context, item)
     existing = swarm_read(context, "secret", "ls",
@@ -75,8 +88,8 @@ module Shell
     [secrets.keys.max, secrets]
   end
 
-  def capture(*cmd)
-    out, status = Open3.capture2(*cmd)
+  def capture(*cmd, **opts)
+    out, status = Open3.capture2(*cmd, **opts)
     raise "command failed: #{cmd.join(' ')}" unless status.success?
 
     out
@@ -93,7 +106,7 @@ module SSH
     Net::SSH.start(hostname, user, &)
   end
 
-  def tunnel(ssh, remote_port)
+  def tunnel(ssh, remote_port = Constants::REGISTRY_PORT)
     port = ssh.forward.local(0, "localhost", remote_port)
 
     running = true
@@ -240,7 +253,7 @@ class DeployCaddy < Dry::CLI::Command
     # process on this machine may already be bound to REGISTRY_PORT.
 
     begin
-      SSH.tunnel(ssh, REGISTRY_PORT) do |port|
+      SSH.tunnel(ssh) do |port|
         image = "localhost:#{port}/#{local_image}"
         begin
           docker "tag", local_image, image
@@ -407,7 +420,7 @@ class RenderStack < Dry::CLI::Command
     require "erb"
   end
 
-  def call(context:, dry_run:, config: nil)
+  def call(context:, dry_run:)
     prepare
     config ||= Deploy::Config.for("staging")
 
@@ -415,7 +428,7 @@ class RenderStack < Dry::CLI::Command
 
     stack = ERB.new(template, trim_mode: "-").result_with_hash(
       deployment: config.slug,
-      image: Shell.image("cast"),
+      image: Shell.image("cast-#{config.slug}"),
       env_secret: swarm_secrets(context, config.vault).first,
       root_dir: CAST_ROOT,
       network: NETWORK,
@@ -427,25 +440,71 @@ class RenderStack < Dry::CLI::Command
   end
 end
 
-class DeployCommand < Dry::CLI::Command
+class DeployDocker < Dry::CLI::Command
   include Shell
 
   desc "deploy the current branch"
 
   option :context, default: "cast", desc: "local docker context"
 
+  def prepare
+    require "erb"
+  end
+
   def call(context:)
+    prepare
+
     config = Deploy::Config.for('staging')
-    build_image(config)
+    host = Shell.host(context)
+
+    local = local_image("cast-#{config.slug}")
+    build_image(local)
+
+    SSH.connect(host) do |ssh|
+      push_image(ssh, local)
+
+      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/data")
+      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/redis")
+
+      deploy_stack(context, config)
+    end
   end
 
   private
 
-  def build_image(config)
-    name = local_image("cast-#{config.slug}")
-
+  def build_image(name)
     log("Building docker image locally: #{name}")
-    docker("buildx", "build", "--target", "production", "-t", name, ".")
+    docker("build", "--target", "production", "-t", name, ".")
+  end
+
+  def push_image(ssh, local)
+    SSH.tunnel(ssh) do |port|
+      image = "localhost:#{port}/#{local}"
+      begin
+        docker "tag", local, image
+        docker "push", image 
+      ensure
+        docker "rm", "-f", image
+      end
+    end
+  end
+
+  def deploy_stack(context, config)
+    template = File.read(root("deploy", "stack.yml.erb"))
+
+    stack = ERB.new(template, trim_mode: "-").result_with_hash(
+      deployment: config.slug,
+      image: Shell.image("cast-#{config.slug}"),
+      env_secret: swarm_secrets(context, config.vault).first,
+      root_dir: Constants::CAST_ROOT,
+      network: Constants::NETWORK,
+    )
+
+    puts stack
+
+    stream "docker", "--context", context, "stack", "deploy",
+      "--compose-file", "-", "--detach=false", config.stack, 
+      stdin_data: stack
   end
 end
 
@@ -460,11 +519,13 @@ module Deploy
       def vault = "cast.production"
       def slug = "production"
       def domain = "cast.athas.org"
+      def stack = "cast-production"
     end
 
     Staging = Data.define(:name, :slug) do
       def vault = "cast.staging"
       def domain = "#{slug}.cast.athas.org"
+      def stack = "cast-#{name}"
     end
 
     def self.for(name, production: false)
@@ -507,7 +568,7 @@ module Deploy
 
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "bootstrap", Bootstrap
-      register "deploy", ::DeployCommand
+      register "deploy", ::DeployDocker
       register "swarm install", ::SetupDocker
       register "caddy deploy", ::DeployCaddy
       register "caddy reload", ::ReloadCaddy
