@@ -366,7 +366,7 @@ class Secrets < Dry::CLI::Command
     if exists
       log "Secret #{current} (#{hex}) already exists, skipping"
     else
-      name = update_secret(item, hex, rendered)
+      name = update_secret(context, item, hex, rendered)
     end
 
     puts "ENV_SECRET=#{name}"
@@ -385,7 +385,7 @@ class Secrets < Dry::CLI::Command
     (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
   end
 
-  def update_secret(item, hex, rendered)
+  def update_secret(context, item, hex, rendered)
     name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
     log "Creating secret #{name}"
 
