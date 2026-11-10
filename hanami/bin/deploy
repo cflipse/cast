@@ -319,7 +319,6 @@ class Secrets < Dry::CLI::Command
   desc "add secrets to docker swarm"
 
   argument :host, required: true, desc: "ssh user@host"
-  argument :item, required: true, desc: "bitwarden secret"
   option :template, default: "deploy/env.erb", desc: "ERB env template"
   option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
   option :context, default: "cast", desc: "local docker context"
@@ -333,18 +332,18 @@ class Secrets < Dry::CLI::Command
     require "time"
   end
 
-  def call(host:, item:, template:, dry_run:, context:)
+  def call(host:, template:, dry_run:, context:)
     prepare
 
-    raise "KeyError" unless item.start_with? "cast."
+    config = Deploy::Config.for('staging')
 
-    fields = fetch_fields(item)
+    fields = fetch_fields(config.vault)
     rendered = ERB.new(File.read(root(template)), trim_mode: "-")
                   .result(Renderer.new(fields).binding_for_erb)
 
     hex = Digest::SHA256.hexdigest(rendered)[..16]
 
-    current, secrets = swarm_secrets(context, item)
+    current, secrets = swarm_secrets(context, config.vault)
     exists = secrets.dig(current, "cast.hash") == hex
 
     if dry_run
@@ -359,7 +358,7 @@ class Secrets < Dry::CLI::Command
     if exists
       log "Secret #{current} (#{hex}) already exists, skipping"
     else
-      name = update_secret(context, item, hex, rendered)
+      name = update_secret(context, config.vault, hex, rendered)
     end
 
     puts "ENV_SECRET=#{name}"
@@ -392,8 +391,6 @@ class Secrets < Dry::CLI::Command
 
     name
   end
-
-
 end
 
 class RenderStack < Dry::CLI::Command
@@ -403,22 +400,22 @@ class RenderStack < Dry::CLI::Command
   desc "render the docker compose stack"
 
   argument :deployment, required: true, desc: "name of the deployment stack"
-  argument :item, required: true, desc: "bitwarden secret"
   option :context, default: "cast", desc: "local docker context"
 
   def prepare
     require "erb"
   end
 
-  def call(deployment:, context:, item:)
+  def call(deployment:, context:, config: nil)
     prepare
+    config ||= Deploy::Config.for("staging")
 
     template = File.read(root("deploy", "stack.yml.erb"))
 
     stack = ERB.new(template, trim_mode: "-").result_with_hash(
       deployment:,
       image: Shell.image("cast"),
-      env_secret: swarm_secrets(context, item),
+      env_secret: swarm_secrets(context, config.vault).first,
       root_dir: CAST_ROOT,
       network: NETWORK,
     )
@@ -428,6 +425,33 @@ class RenderStack < Dry::CLI::Command
 end
 
 module Deploy
+
+  module Config
+    extend self
+
+    module Production
+      extend self
+
+      def vault = "cast.production"
+      def slug = "main"
+      def domain = "cast.athas.org"
+    end
+
+    Staging = Data.define(:name, :slug) do
+      def vault = "cast.staging"
+      def domain = "#{slug}.cast.athas.org"
+    end
+
+    def self.for(name)  
+      return Production if name == "production" 
+
+      slug = branch.to_s.downcase.gsub(/[^:alnum:]/, '-').strip
+      Staging.new(name, slug)
+    end
+
+    def self.branch = Shell.run("git", "branch", "--show-current")
+  end
+
   module CLI
     module Commands
       extend Dry::CLI::Registry
@@ -445,7 +469,7 @@ module Deploy
         argument :host, required: true, desc: "ssh user@host"
         option :context, default: "cast", desc: "local docker context"
 
-        def call(host:, context:)
+        def call(opts)
           SSH.connect host do |ssh|
             Shell.log "Creating #{CAST_ROOT}"
             ssh.exec! "sudo mkdir -p #{CAST_ROOT} && sudo chown \"$(id -u):$(id -g)\" #{CAST_ROOT}"
