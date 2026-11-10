@@ -25,6 +25,19 @@ module Shell
     system(*cmd) || raise("command failed: #{cmd.join(' ')}")
   end
 
+  # Tag by content (git SHA, same convention bin/deploy uses for app
+  # images) so every build gets a distinct tag. A reused static tag (e.g.
+  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
+  # since Swarm only notices a change when the tag itself differs.
+  def image_version
+    capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
+  rescue StandardError
+    Time.now.to_i.to_s
+  end
+
+  def local_image(name) = [name, image_version].join(":")
+  def image(*) = "localhost:#{Constants::REGISTRY_PORT}/#{local_image(*)}"
+
   def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
 
   def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
@@ -188,46 +201,28 @@ class DeployCaddy < Dry::CLI::Command
   option :context, default: "cast", desc: "local docker context"
 
   def call(host:, context:)
-    tag = image_version
-
-    # Two different refs for the same underlying image: the registry only
-    # keys off repository/tag, not the host:port a client used to reach it,
-    # so the local push and the remote pull can address it through
-    # different ports without conflict.
-    local_image = "caddy:#{tag}"
-    remote_image = "localhost:#{REGISTRY_PORT}/caddy:#{tag}"
-
-    build_caddy(local_image)
+    build_caddy
 
     SSH.connect(host) do |ssh|
       push_caddyfile(ssh)
-      publish(ssh, local_image)
+      publish(ssh, local_image("caddy"))
     end
 
-    start_caddy(context, remote_image)
+    start_caddy(context, image("caddy"))
 
     log "Caddy update complete"
   end
 
   private
 
-  # Tag by content (git SHA, same convention bin/deploy uses for app
-  # images) so every build gets a distinct tag. A reused static tag (e.g.
-  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
-  # since Swarm only notices a change when the tag itself differs.
-  def image_version
-    capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
-  rescue StandardError
-    Time.now.to_i.to_s
-  end
-
-  def build_caddy(local_image)
+  def build_caddy
     dir = root("deploy", "caddy")
+    name = local_image("caddy")
 
     # Build on THIS machine, not the VM's daemon, so the host never spends
     # its own CPU/disk compiling images.
-    log "Building front-door Caddy image locally (#{local_image})"
-    docker("build", "-t", local_image, dir)
+    log "Building front-door Caddy image locally (#{name})"
+    docker("build", "-t", name, dir)
   end
 
   def push_caddyfile(ssh)
@@ -412,17 +407,15 @@ class RenderStack < Dry::CLI::Command
   argument :deployment, required: true, desc: "name of the deployment stack"
   argument :item, required: true, desc: "bitwarden secret"
   option :context, default: "cast", desc: "local docker context"
-  option :image  # probably temporary, as the image should be 
 
   def prepare
     require "erb"
   end
 
-
-
-  def call(deployment:, context:, image:, item:)
+  def call(deployment:, context:, item:)
     prepare
 
+    image = Shell.image("cast")
     env_secret, _ = swarm_secrets(context, item)
 
     template = File.read(root("deploy", "stack.yml.erb"))
