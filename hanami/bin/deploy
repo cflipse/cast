@@ -20,6 +20,7 @@ module Shell
   module_function
 
   def log(message) = puts "==> #{message}"
+
   def run(*cmd)
     puts "+ #{cmd.join(' ')}"
     system(*cmd) || raise("command failed: #{cmd.join(' ')}")
@@ -55,6 +56,7 @@ module Shell
   end
 
   def docker(*cmd) = run("docker", *cmd)
+  def host(context) = capture("docker", "context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}").strip.split("//",2).last
 
   def swarm(context, *cmd) = run("docker", "--context", context, *cmd)
   def swarm_read(context, *args) = capture("docker", "--context", context, *args)
@@ -195,10 +197,10 @@ class DeployCaddy < Dry::CLI::Command
 
   desc "deploy a new caddy image"
 
-  argument :host, required: true, desc: "ssh user@host"
   option :context, default: "cast", desc: "local docker context"
 
-  def call(host:, context:)
+  def call(context:)
+    host = Shell.host(context)
     build_caddy
 
     SSH.connect(host) do |ssh|
@@ -276,10 +278,11 @@ class ReloadCaddy < Dry::CLI::Command
 
   desc "reload a caddy configuration"
 
-  argument :host, required: true, desc: "ssh user@host"
   option :context, default: "cast", desc: "local docker context"
 
-  def call(host:, context:)
+  def call(context:)
+    host = Shell.host(context)
+
     SSH.connect(host) do |ssh|
       push_caddyfile(ssh)
     end
@@ -318,11 +321,9 @@ class Secrets < Dry::CLI::Command
 
   desc "add secrets to docker swarm"
 
-  argument :host, required: true, desc: "ssh user@host"
   option :template, default: "deploy/env.erb", desc: "ERB env template"
-  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
   option :context, default: "cast", desc: "local docker context"
-
+  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
 
   def prepare
     require "shellwords"
@@ -332,9 +333,9 @@ class Secrets < Dry::CLI::Command
     require "time"
   end
 
-  def call(host:, template:, dry_run:, context:)
+  def call(template:, dry_run:, context:)
     prepare
-
+    host = Shell.host(context)
     config = Deploy::Config.for('staging')
 
     fields = fetch_fields(config.vault)
@@ -476,7 +477,7 @@ module Deploy
           end
 
           SetupDocker.new.call(host:, context:)
-          DeployCaddy.new.call(host:, context:)
+          DeployCaddy.new.call(context:)
         end
       end
 
