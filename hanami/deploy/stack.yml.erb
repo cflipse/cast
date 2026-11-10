@@ -13,7 +13,7 @@ services:
       DATABASE_URL: sqlite:///data/cast.sqlite
     volumes:
       - type: bind
-        source: /srv/cast/<%= deployment %>/data
+        source: <%= root_dir %>/<%= deployment %>/data
         target: /data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:2300/up"]
@@ -42,7 +42,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - type: bind
-        source: /srv/cast/<%= deployment %>/redis
+        source: <%= root_dir %>/<%= deployment %>/redis
         target: /data
     networks:
       - internal
@@ -58,6 +58,6 @@ secrets:
 
 networks:
   internal:
-  swarm-network:
+  <%= network %>:
     external: true
 
