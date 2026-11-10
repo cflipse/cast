@@ -323,7 +323,7 @@ class Secrets < Dry::CLI::Command
 
   option :template, default: "deploy/env.erb", desc: "ERB env template"
   option :context, default: "cast", desc: "local docker context"
-  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing"
+  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
 
   def prepare
     require "shellwords"
@@ -400,28 +400,30 @@ class RenderStack < Dry::CLI::Command
 
   desc "render the docker compose stack"
 
-  argument :deployment, required: true, desc: "name of the deployment stack"
   option :context, default: "cast", desc: "local docker context"
+  option :dry_run, default: false, type: :boolean, desc: "test the stack render", aliases: ["-n"]
 
   def prepare
     require "erb"
   end
 
-  def call(deployment:, context:, config: nil)
+  def call(context:, dry_run:, config: nil)
     prepare
     config ||= Deploy::Config.for("staging")
 
     template = File.read(root("deploy", "stack.yml.erb"))
 
     stack = ERB.new(template, trim_mode: "-").result_with_hash(
-      deployment:,
+      deployment: config.slug,
       image: Shell.image("cast"),
       env_secret: swarm_secrets(context, config.vault).first,
       root_dir: CAST_ROOT,
       network: NETWORK,
     )
 
-    puts stack
+    if dry_run
+      puts stack
+    end
   end
 end
 
@@ -434,7 +436,7 @@ module Deploy
       extend self
 
       def vault = "cast.production"
-      def slug = "main"
+      def slug = "production"
       def domain = "cast.athas.org"
     end
 
