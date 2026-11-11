@@ -328,6 +328,46 @@ class ReloadCaddy < Dry::CLI::Command
   end
 end
 
+class Teardown < Dry::CLI::Command
+  include Shell
+  include Constants
+
+  option :context, default: "cast", desc: "local docker context"
+
+  def call(context:)
+    config = Deploy::Config.for("staging")
+    host = Shell.host(context)
+
+    swarm(context, "stack", "rm", config.stack)
+
+    SSH.connect(host) do |ssh|
+      ssh.exec!("rm -f #{CAST_ROOT}/caddy/branches/#{config.slug}.caddy")
+
+      ssh.exec!("rm -rf #{CAST_ROOT}/#{config.slug}")
+    end
+
+    restart_caddy(context)
+  end
+
+  private
+
+
+  def restart_caddy(context)
+    container_id = swarm_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
+      .lines(chomp: true).first
+
+    unless container_id
+      abort "No running #{CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
+    end
+
+    log "Reloading Caddy config (zero-downtime)"
+    swarm(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
+
+    log "Reload complete"
+  end
+
+end
+
 class Secrets < Dry::CLI::Command
   include Shell
   include Constants
@@ -625,6 +665,7 @@ module Deploy
       register "secrets sync", ::Secrets
       register "stack render", ::RenderStack
       register "logs", ::TailLogs
+      register "teardown", ::Teardown
     end
   end
 end
