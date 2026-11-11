@@ -11,6 +11,7 @@ RUN apk add --no-cache \
   tzdata \
   taglib \
   yaml \
+  sqlite \
   rsync
 
 ENV BUNDLE_JOBS=4 \
@@ -26,6 +27,7 @@ RUN apk add --no-cache \
   libffi-dev \
   nodejs \
   npm \
+  openssl-dev \
   taglib-dev
 
 # These take longer to build
@@ -56,7 +58,10 @@ FROM base AS production
 EXPOSE 2300
 COPY . .
 
+ENV RACK_ENV=production
+
 COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
 
 ENTRYPOINT ["bin/docker-entrypoint"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]

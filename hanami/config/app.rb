@@ -20,5 +20,12 @@ module Cast
 
       ViteRuby.instance.logger.level = Logger::INFO
     end
+
+    environment :production do
+      config.middleware.use Rack::Static,
+        urls: ["/vite"],
+        root: config.actions.public_directory,
+        header_rules: [[:all, {"cache-control" => "public, max-age=31536000, immutable"}]]
+    end
   end
 end

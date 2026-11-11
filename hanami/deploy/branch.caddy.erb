@@ -1,0 +1,5 @@
+<%= domain %> {
+  reverse_proxy app-<%= deployment %>:2300 {
+    health_uri /up
+  }
+}

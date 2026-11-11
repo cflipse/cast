@@ -30,6 +30,7 @@ gem "kramdown"
 gem "bigdecimal", "~> 4.1"
 
 gem "rss"
+gem "vite_ruby"
 
 group :development do
   gem "hanami-webconsole", "~> 3.0.0"
@@ -43,8 +44,11 @@ group :development, :test do
   gem "pry"
 
   gem "rom-factory"
+end
 
-  gem "vite_ruby"
+group :cli do
+  gem "net-ssh"
+  gem "net-scp"
 end
 
 group :cli, :development do

@@ -3,3 +3,12 @@
 ./tmp
 ./node_modules
 ./.git
+
+./public/vite*
+./public/assets
+
+./.env
+./.env.*
+./.envrc
+./.direnv
+./.ruby-lsp
