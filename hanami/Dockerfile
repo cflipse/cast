@@ -58,6 +58,8 @@ FROM base AS production
 EXPOSE 2300
 COPY . .
 
+ENV RACK_ENV=production
+
 COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
 
