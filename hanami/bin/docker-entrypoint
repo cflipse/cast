@@ -1,6 +1,12 @@
 #!/bin/sh -e
 
-if [ "${1}" == "./bin/hanami" ] && [ "${2}" == "server" ]; then
+if [ -f /run/secrets/env ]; then
+  set -a
+  source /run/secrets/env
+  set +a
+fi
+
+if [ "${1}" = "./bin/hanami" ] && [ "${2}" = "server" ]; then
   ./bin/hanami db prepare
 fi
 
