@@ -3,3 +3,9 @@
 ./tmp
 ./node_modules
 ./.git
+
+./.env
+./.env.*
+./.envrc
+./.direnv
+./.ruby-lsp
