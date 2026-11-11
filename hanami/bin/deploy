@@ -467,6 +467,8 @@ class DeployDocker < Dry::CLI::Command
       ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/redis")
 
       deploy_stack(context, config)
+      enable_caddy(ssh, config)
+      restart_caddy(context)
     end
   end
 
@@ -500,11 +502,36 @@ class DeployDocker < Dry::CLI::Command
       network: Constants::NETWORK,
     )
 
-    puts stack
-
     stream "docker", "--context", context, "stack", "deploy",
       "--compose-file", "-", "--detach=false", config.stack, 
       stdin_data: stack
+  end
+
+  def enable_caddy(ssh, config)
+    template = File.read(root("deploy", "branch.caddy.erb"))
+
+    caddy = ERB.new(template, trim_mode: "-").result_with_hash(
+      domain: config.domain,
+      deployment: config.slug,
+    )
+
+    log "Updating #{config.slug}.caddy file"
+    ssh.scp.upload! StringIO.new(caddy),
+      "#{Constants::CAST_ROOT}/caddy/branches/#{config.slug}.caddy"
+  end
+
+  def restart_caddy(context)
+    container_id = swarm_read(context, "ps", "--filter", "name=#{Constants::CADDY_SERVICE}", "--format", "{{.ID}}")
+      .lines(chomp: true).first
+
+    unless container_id
+      abort "No running #{Constants::CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
+    end
+
+    log "Reloading Caddy config (zero-downtime)"
+    swarm(context, "exec", container_id, Constants::CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
+
+    log "Reload complete"
   end
 end
 
