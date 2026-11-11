@@ -16,7 +16,7 @@ services:
         source: <%= root_dir %>/<%= deployment %>/data
         target: /data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:2300/up"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2300/up"]
       interval: 10s
       timeout: 3s
       retries: 3
