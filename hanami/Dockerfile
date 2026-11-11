@@ -62,4 +62,4 @@ COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
 
 ENTRYPOINT ["bin/docker-entrypoint"]
-CMD ["./bin/hanami", "server"]
+CMD ["./bin/hanami", "server", "--host", "0.0.0.0"]
