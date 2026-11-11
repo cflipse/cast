@@ -535,6 +535,29 @@ class DeployDocker < Dry::CLI::Command
   end
 end
 
+class TailLogs < Dry::CLI::Command
+  include Shell
+
+  option :context, default: "cast", desc: "local docker context"
+  option :follow, default: false, type: :boolean, aliases: ["-f"]
+  option :service, default: "app"
+  option :tail, default: "200", type: :boolean, aliases: ["-t"]
+  option :since, default: "10m", aliases: ["-s"]
+
+
+  def call(context:, follow:, service:, tail:, since:)
+    config = Deploy::Config.for("staging")
+
+    cmd = ["docker", "--context", context, "service", "logs", "--timestamps",
+           "--tail", tail, "--since", since, "#{config.stack}_#{service}"]
+    cmd << "--follow" if follow
+
+    IO.popen(cmd, err: [:child, :out]) do |io|
+      io.each_line { |l| puts l unless l.include?('"path":"/up"') }
+    end
+  end
+end
+
 module Deploy
   module Config
     extend self
@@ -601,6 +624,7 @@ module Deploy
       register "caddy reload", ::ReloadCaddy
       register "secrets sync", ::Secrets
       register "stack render", ::RenderStack
+      register "logs", ::TailLogs
     end
   end
 end
