@@ -6,7 +6,7 @@ if [ -f /run/secrets/env ]; then
   set +a
 fi
 
-if [ "${1}" = "./bin/hanami" ] && [ "${2}" = "server" ]; then
+if [ "${RUN_MIGRATIONS:-}" = "true" ]; then
   ./bin/hanami db prepare
 fi
 

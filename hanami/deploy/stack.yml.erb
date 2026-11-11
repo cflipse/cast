@@ -11,6 +11,7 @@ services:
       HANAMI_ENV: production
       REDIS_URL: redis://redis:6379
       DATABASE_URL: sqlite:///data/cast.sqlite
+      RUN_MIGRATIONS: "true"
     volumes:
       - type: bind
         source: <%= root_dir %>/<%= deployment %>/data

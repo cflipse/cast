@@ -64,4 +64,4 @@ COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
 
 ENTRYPOINT ["bin/docker-entrypoint"]
-CMD ["./bin/hanami", "server", "--host", "0.0.0.0"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
