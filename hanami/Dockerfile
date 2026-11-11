@@ -11,6 +11,7 @@ RUN apk add --no-cache \
   tzdata \
   taglib \
   yaml \
+  sqlite \
   rsync
 
 ENV BUNDLE_JOBS=4 \
@@ -61,3 +62,4 @@ COPY --from=assets /usr/local/bundle /usr/local/bundle
 COPY --from=assets /srv/cast/public /srv/cast/public
 
 ENTRYPOINT ["bin/docker-entrypoint"]
+CMD ["./bin/hanami", "server"]
