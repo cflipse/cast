@@ -9,11 +9,6 @@ require "open3"
 require "pathname"
 require "erb"
 
-module Constants
-  NETWORK = "swarm-network"
-  CAST_ROOT = "/srv/cast"
-end
-
 module Shell
   module_function
 
@@ -21,9 +16,12 @@ module Shell
 
   def run(*cmd, **opts)
     puts "+ #{cmd.join(' ')}"
+    Shell.read(*cmd, **opts)
+  end
 
-    out, status = Shell.exec(*cmd, **opts)
-    raise "command failed" unless status.success?
+  def read(*cmd, **opts)
+    out, err, status = Open3.capture3(*cmd, **opts)
+    raise "command failed #{cmd.join(' ')} : #{err}" unless status.success?
     out
   end
 
@@ -91,6 +89,10 @@ module SSH
     conn.scp.upload! io, path.to_s
   end
 
+  def base_dir(conn)
+    conn.exec!("sudo mkdir -p #{CAST_ROOT} && sudo chown \"$(id -u):$(id -g)\" #{CAST_ROOT}")
+  end
+
   def mkdir(conn, subdir = "")
     path = Pathname.new(CAST_ROOT).join(subdir)
     Shell.log "ensuring #{path} exists"
@@ -99,6 +101,8 @@ module SSH
   end
 
   def rm(conn, target)
+    raise "Refusing to delete an empty target" if target.to_s.strip.empty?
+
     Shell.log "removing #{target}"
     path = Pathname.new(CAST_ROOT).join(target)
 
@@ -204,7 +208,7 @@ module Deploy
           docker "tag", local, image
           docker "push", image 
         ensure
-          docker "rm", "-f", image
+          docker "rmi", image
         end
       end
 
@@ -238,8 +242,6 @@ module Deploy
   Swarm = Data.define(:context) do
     NETWORK = "swarm-network"
 
-    include Shell
-
     def init(ip)
       state = read("info", "--format", "{{.Swarm.LocalNodeState}}").strip
 
@@ -254,19 +256,19 @@ module Deploy
     # Not actually run on the swarm, but most conceptually associated with the
     # swarm
     def host
-      run("docker", "context", "inspect", context,
+      Shell.read("docker", "context", "inspect", context,
         "--format", "{{.Endpoints.docker.Host}}"
       ).strip.split("//",2).last
     end
 
     def deploy_stack(name, template, **fields)
       data = Template.render(template,
-        root_dir: Constants::CAST_ROOT,
-        network: Constants::NETWORK,
+        root_dir: SSH::CAST_ROOT,
+        network: NETWORK,
         **fields
       )
 
-      stream "docker", "--context", context, "stack", "deploy",
+      Shell.stream "docker", "--context", context, "stack", "deploy",
         "--compose-file", "-", "--detach=false", name, stdin_data: data
     end
 
@@ -298,10 +300,11 @@ module Deploy
       else
         Shell.log "Creating #{name} service"
 
-        exec "service", "create", image,
+        exec "service", "create",
           "--name", name,
           "--network", NETWORK,
-          *args
+          *args,
+          image
       end
     end
 
@@ -326,8 +329,9 @@ module Deploy
 
     private
 
-    def exec(*cmd, **opts)  = run("docker", "--context", context, *cmd, **opts)
-    def read(*args, **opts) = run("docker", "--context", context, *args, **opts)
+    def exec(*cmd, **opts)  = Shell.run("docker", "--context", context, *cmd, **opts)
+    def read(*args, **opts) = Shell.read("docker", "--context", context, *args, **opts)
+    def log(...) = Shell.log(...)
 
     def running?(kind, name)
       read(kind, "ls", "--format", "{{.Name}}").lines(chomp: true).include?(name)
@@ -337,7 +341,6 @@ end
 
 class SetupDocker < Dry::CLI::Command
   include Shell
-  include Constants
 
   argument :host, required: true, desc: "ssh user@host"
   option :context, default: "cast", desc: "local docker context"
@@ -382,7 +385,6 @@ end
 
 class DeployCaddy < Dry::CLI::Command
   include Shell
-  include Constants
 
   desc "deploy a new caddy image"
 
@@ -408,7 +410,6 @@ end
 
 class ReloadCaddy < Dry::CLI::Command
   include Shell
-  include Constants
 
   desc "reload a caddy configuration"
 
@@ -427,7 +428,6 @@ end
 
 class Teardown < Dry::CLI::Command
   include Shell
-  include Constants
 
   option :context, default: "cast", desc: "local docker context"
 
@@ -439,7 +439,7 @@ class Teardown < Dry::CLI::Command
 
     SSH.connect(swarm.host) do |conn|
       SSH.rm(conn, "caddy/branches/#{config.slug}.caddy")
-      SSH.rm(conn, "config.slug")
+      SSH.rm(conn, config.slug)
     end
 
     Deploy::Caddy.reload(swarm)
@@ -506,8 +506,10 @@ class Secrets < Dry::CLI::Command
   end
 
   def fetch_fields(item)
-    json = IO.popen(["bw", "get", "item", item], &:read)
-      .then { JSON.parse it }
+    resp = IO.popen(["bw", "get", "item", item], &:read)
+    raise "unable to read secrets" unless Process.last_status.success?
+
+    json = JSON.parse resp
 
     (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
   end
@@ -540,6 +542,7 @@ class DeployDocker < Dry::CLI::Command
     swarm = Deploy::Swarm.new(context)
 
     local = Deploy::Builder.app(config)
+    remote = ""
 
     SSH.connect(swarm.host) do |conn|
       SSH.mkdir(conn, "#{config.slug}/data")
@@ -547,14 +550,14 @@ class DeployDocker < Dry::CLI::Command
 
       remote = Deploy::Registry.publish(conn, local)
 
-      swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
-        deployment: config.slug,
-        image: remote,
-        env_secret: swarm.secret(config.vault),
-      )
-
       Deploy::Caddy.add_domain(conn, config)
     end
+
+    swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
+      deployment: config.slug,
+      image: remote,
+      env_secret: swarm.secret(config.vault),
+    )
 
     Deploy::Caddy.reload(swarm)
   end
@@ -566,7 +569,7 @@ class TailLogs < Dry::CLI::Command
   option :context, default: "cast", desc: "local docker context"
   option :follow, default: false, type: :boolean, aliases: ["-f"]
   option :service, default: "app"
-  option :tail, default: "200", type: :boolean, aliases: ["-t"]
+  option :tail, default: 200, type: :integer, aliases: ["-t"]
   option :since, default: "10m", aliases: ["-s"]
 
 
@@ -598,13 +601,15 @@ module Deploy
     Staging = Data.define(:name, :slug) do
       def vault = "cast.staging"
       def domain = "#{slug}.cast.athas.org"
-      def stack = "cast-#{name}"
+      def stack = "cast-#{slug}"
     end
 
     def self.for(name, production: false)
       return Production if production
 
       slug = branch.to_s.downcase.gsub(/[^[:alnum:]]/, '-')
+      raise "unknown target" if slug.empty?
+
       Staging.new(name, slug)
     end
 
@@ -621,8 +626,6 @@ module Deploy
       end
 
       class Bootstrap < Dry::CLI::Command
-        include Constants
-
         desc "set up a new server"
 
         argument :host, required: true, desc: "ssh user@host"
@@ -630,6 +633,7 @@ module Deploy
 
         def call(host:, context:)
           SSH.connect host do |conn|
+            SSH.base_dir(conn)
             SSH.mkdir(conn)
             SSH.mkdir(conn, "caddy/branches")
           end
