@@ -9,6 +9,11 @@ require "open3"
 require "pathname"
 require "erb"
 
+
+# TODO:
+#
+# Additional nouns that probably exist to break up mixed modules:  Stack; Remote.
+
 module Shell
   module_function
 
@@ -47,7 +52,6 @@ module Shell
   def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
 
   def docker(*cmd, **opts) = run("docker", *cmd, **opts)
-  def exec(*cmd, **opts) = Open3.capture2(*cmd, **opts)
 end
 
 module SSH
@@ -130,8 +134,12 @@ module Deploy
         "caddy/branches/#{config.slug}.caddy"
     end
 
+    def drop_domain(conn, config)
+      SSH.rm conn, "caddy/branches/#{config.slug}.caddy"
+    end
+
     def reload(swarm)
-      swarm.reload CADDY_SERVICE,
+      swarm.exec_in CADDY_SERVICE, "reload",
         "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"
     end
 
@@ -150,6 +158,19 @@ module Deploy
       log "Ensuring Caddyfile is current"
 
       SSH.upload(ssh, File.join(dir, "Caddyfile"), "caddy/")
+    end
+  end
+
+  module Stack
+    extend self
+
+    def prepare(conn, config)
+      SSH.mkdir(conn, "#{config.slug}/data")
+      SSH.mkdir(conn, "#{config.slug}/redis")
+    end
+
+    def purge(conn, config)
+      SSH.rm(conn, config.slug)
     end
   end
 
@@ -215,8 +236,8 @@ module Deploy
       "localhost:#{REGISTRY_PORT}/#{local}"
     end
 
-    def create(context)
-      Swarm.new(context).start_service REGISTRY_SERVICE, "registry:2",
+    def create(swarm)
+      swarm.start_service REGISTRY_SERVICE, "registry:2",
         "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
         "--constraint", "node.role==manager",
         "--mount", "type=volume,source=registry-data,destination=/var/lib/registry"
@@ -280,16 +301,16 @@ module Deploy
       end
     end
 
-    def reload(name, *args)
+    def exec_in(name, *args)
       container_id = read("ps", "--filter", "name=#{name}", "--format", "{{.ID}}")
         .lines(chomp: true).first
 
       abort "No running #{name}.  Deploy it first" unless container_id
 
-      log "Reloading #{name} (zero-downtime)"
-      run "exec", container_id, name, "reload", *args
+      log "running in #{name}: #{args.join(' ')} "
+      run "exec", container_id, name, *args
 
-      log "Reload complete"
+      log "complete"
     end
 
     def start_service(name, image, *args)
@@ -326,12 +347,10 @@ module Deploy
       name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
       log "Creating secret #{name}"
 
-      _, status = exec "secret", "create", name,
+      read "secret", "create", name,
         "--label", "cast.secrets=#{item}",
         "--label", "cast.hash=#{hex}",
         "-", stdin_data: data
-
-      raise "secret create failed: #{out}" unless status.success?
 
       name
     end
@@ -341,7 +360,6 @@ module Deploy
     private
 
     def run(*cmd, **opts)  = Shell.run("docker", "--context", context, *cmd, **opts)
-    def exec(*cmd, **opts)  = Shell.exec("docker", "--context", context, *cmd, **opts)
     def read(*args, **opts) = Shell.read("docker", "--context", context, *args, **opts)
     def log(...) = Shell.log(...)
 
@@ -370,7 +388,7 @@ class SetupDocker < Dry::CLI::Command
     swarm.init(ip)
     swarm.create_overlay_network
 
-    Deploy::Registry.create(context)
+    Deploy::Registry.create(swarm)
   end
 
   private
@@ -450,8 +468,8 @@ class Teardown < Dry::CLI::Command
     swarm.remove(config.stack)
 
     SSH.connect(swarm.host) do |conn|
-      SSH.rm(conn, "caddy/branches/#{config.slug}.caddy")
-      SSH.rm(conn, config.slug)
+      Deploy::Caddy.drop_domain(conn, config)
+      Deploy::Stack.purge(conn, config)
     end
 
     Deploy::Caddy.reload(swarm)
@@ -542,8 +560,7 @@ class DeployDocker < Dry::CLI::Command
     remote = ""
 
     SSH.connect(swarm.host) do |conn|
-      SSH.mkdir(conn, "#{config.slug}/data")
-      SSH.mkdir(conn, "#{config.slug}/redis")
+      Deploy::Stack.prepare(conn, config)
 
       remote = Deploy::Registry.publish(conn, local)
 
@@ -610,7 +627,7 @@ module Deploy
       Staging.new(name, slug)
     end
 
-    def self.branch = Shell.exec("git", "branch", "--show-current").first.strip
+    def self.branch = Shell.read("git", "branch", "--show-current").strip
   end
 
   module CLI
