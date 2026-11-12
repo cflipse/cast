@@ -13,10 +13,6 @@ module Constants
   CAST_ROOT = "/srv/cast"
 end
 
-module Deploy
-  CAST_ROOT = Constants::CAST_ROOT
-end
-
 module Shell
   module_function
 
@@ -25,16 +21,6 @@ module Shell
   def run(*cmd, **opts)
     puts "+ #{cmd.join(' ')}"
     capture(*cmd, **opts)
-  end
-
-  # Tag by content (git SHA, same convention bin/deploy uses for app
-  # images) so every build gets a distinct tag. A reused static tag (e.g.
-  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
-  # since Swarm only notices a change when the tag itself differs.
-  def image_version
-    capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
-  rescue StandardError
-    Time.now.to_i.to_s
   end
 
   def stream(*cmd, stdin_data:)
@@ -49,8 +35,6 @@ module Shell
 
     raise "command failed: #{cmd.join(' ')}" unless status.success?
   end
-
-  def local_image(name) = [name, image_version].join(":")
 
   def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
 
@@ -99,6 +83,8 @@ end
 module SSH
   extend self
 
+  CAST_ROOT = "/srv/cast".freeze
+
   def connect(host, &)
     user, hostname = host.split("@", 2)
     user, hostname = "root", user if hostname.nil?
@@ -106,12 +92,12 @@ module SSH
     Net::SSH.start(hostname, user, &)
   end
 
-  def tunnel(ssh, remote_port)
-    port = ssh.forward.local(0, "localhost", remote_port)
+  def tunnel(conn, remote_port)
+    port = conn.forward.local(0, "localhost", remote_port)
 
     running = true
     # keep the connection flowing in the background
-    worker = Thread.new { ssh.loop(0.1) { running }}
+    worker = Thread.new { conn.loop(0.1) { running }}
 
     begin
       yield port
@@ -120,6 +106,31 @@ module SSH
       worker.value
     end
   end
+
+  def public_ip(conn)
+    conn.exec!("curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address").strip
+  end
+
+  def upload(conn, io, dest)
+    Shell.log "uploading file to #{dest}"
+    path = Pathname.new(CAST_ROOT).join(dest)
+
+    conn.scp.upload! io, path.to_s
+  end
+
+  def mkdir(conn, subdir = "")
+    path = Pathname.new(CAST_ROOT).join(subdir)
+    Shell.log "ensuring #{path} exists"
+
+    conn.exec! "mkdir -p #{path}"
+  end
+
+  def rm(conn, target)
+    log "removing #{target}"
+    Shell.path = Pathname.new(CAST_ROOT).join(target)
+
+    conn.exec! "rm -rf #{path}"
+  end
 end
 
 module Deploy
@@ -127,7 +138,21 @@ module Deploy
     extend self
     include Shell
 
-    CADDY_SERVICE = "caddy"
+    CADDY_SERVICE = "caddy".freeze
+
+    def add_domain(conn, config)
+      template = File.read(root("deploy", "branch.caddy.erb"))
+
+      caddy = ERB.new(template, trim_mode: "-").result_with_hash(
+        domain: config.domain,
+        deployment: config.slug,
+      )
+
+      log "Updating #{config.slug}.caddy file"
+
+      SSH.upload conn, StringIO.new(caddy), 
+        "caddy/branches/#{config.slug}.caddy"
+    end
 
     def reload(context)
       container_id = swarm_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
@@ -164,10 +189,9 @@ module Deploy
 
     def push(ssh)
       dir = root("deploy", "caddy")
-      log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
+      log "Ensuring Caddyfile is current"
 
-      ssh.exec!("mkdir -p #{CAST_ROOT}/caddy/branches")
-      ssh.scp.upload!(File.join(dir, "Caddyfile"), "#{CAST_ROOT}/caddy/")
+      SSH.upload(ssh, File.join(dir, "Caddyfile"), "caddy/")
     end
   end
 
@@ -194,6 +218,20 @@ module Deploy
       docker("build", "-t", name, dir)
 
       name
+    end
+
+    private
+
+    def local_image(name) = [name, image_version].join(":")
+
+    # Tag by content (git SHA, same convention bin/deploy uses for app
+    # images) so every build gets a distinct tag. A reused static tag (e.g.
+    # caddy:bootstrap) makes `docker service update --image` a silent no-op,
+    # since Swarm only notices a change when the tag itself differs.
+    def image_version
+      capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
+    rescue StandardError
+      Time.now.to_i.to_s
     end
   end
 
@@ -247,9 +285,9 @@ class SetupDocker < Dry::CLI::Command
     ip = nil
     create_docker_context(host, context)
 
-    SSH.connect(host) do |ssh|
-      ip = public_ip(ssh)
-      install_docker(ssh)
+    SSH.connect(host) do |conn|
+      ip = SSH.public_ip(conn)
+      install_docker(conn)
     end
 
     docker_swarm_init(context, ip)
@@ -300,9 +338,6 @@ class SetupDocker < Dry::CLI::Command
       log "Creating overlay network #{NETWORK}"
       swarm(context, "network", "create", "--driver", "overlay", "--attachable", NETWORK)
     end
-  end
-
-  def deploy_registry(context)
   end
 end
 
@@ -362,9 +397,9 @@ class Teardown < Dry::CLI::Command
 
     swarm(context, "stack", "rm", config.stack)
 
-    SSH.connect(host) do |ssh|
-      ssh.exec!("rm -f #{CAST_ROOT}/caddy/branches/#{config.slug}.caddy")
-      ssh.exec!("rm -rf #{CAST_ROOT}/#{config.slug}")
+    SSH.connect(host) do |conn|
+      SSH.remove(conn, "caddy/branches/#{config.slug}.caddy")
+      SSH.remove(conn, "config.slug")
     end
 
     Deploy::Caddy.reload(context)
@@ -469,14 +504,15 @@ class DeployDocker < Dry::CLI::Command
 
     local = Deploy::Builder.app(config)
 
-    SSH.connect(host) do |ssh|
-      remote = Deploy::Registry.publish(ssh, local)
+    SSH.connect(host) do |conn|
+      SSH.mkdir(conn, "#{config.slug}/data")
+      SSH.mkdir(conn, "#{config.slug}/redis")
 
-      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/data")
-      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/redis")
+      remote = Deploy::Registry.publish(conn, local)
 
-      deploy_stack(context, config, image)
-      enable_caddy(ssh, config)
+      deploy_stack(context, config, remote)
+
+      Deploy::Caddy.add_domain(conn, config)
     end
 
     Deploy::Caddy.reload(context)
@@ -498,19 +534,6 @@ class DeployDocker < Dry::CLI::Command
     stream "docker", "--context", context, "stack", "deploy",
       "--compose-file", "-", "--detach=false", config.stack, 
       stdin_data: stack
-  end
-
-  def enable_caddy(ssh, config)
-    template = File.read(root("deploy", "branch.caddy.erb"))
-
-    caddy = ERB.new(template, trim_mode: "-").result_with_hash(
-      domain: config.domain,
-      deployment: config.slug,
-    )
-
-    log "Updating #{config.slug}.caddy file"
-    ssh.scp.upload! StringIO.new(caddy),
-      "#{Constants::CAST_ROOT}/caddy/branches/#{config.slug}.caddy"
   end
 end
 
@@ -586,8 +609,8 @@ module Deploy
 
         def call(opts)
           SSH.connect host do |ssh|
-            Shell.log "Creating #{CAST_ROOT}"
-            ssh.exec! "sudo mkdir -p #{CAST_ROOT} && sudo chown \"$(id -u):$(id -g)\" #{CAST_ROOT}"
+            SSH.mkdir(conn)
+            SSH.mkdir(conn, "caddy/branches")
           end
 
           SetupDocker.new.call(host:, context:)
