@@ -44,7 +44,6 @@ module Shell
     end
   end
 
-  def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
   def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
 
   def docker(*cmd, **opts) = run("docker", *cmd, **opts)
@@ -249,7 +248,7 @@ module Deploy
         log "Already part of a swarm, skipping swarm init"
       else
         log "Initializing swarm"
-        exec("swarm", "init", "--advertise-addr", ip)
+        run("swarm", "init", "--advertise-addr", ip)
       end
     end
 
@@ -277,7 +276,7 @@ module Deploy
         log "Network #{NETWORK} already exists, skipping"
       else
         log "Creating overlay network #{NETWORK}"
-        exec("network", "create", "--driver", "overlay", "--attachable", NETWORK)
+        run("network", "create", "--driver", "overlay", "--attachable", NETWORK)
       end
     end
 
@@ -288,7 +287,7 @@ module Deploy
       abort "No running #{name}.  Deploy it first" unless container_id
 
       log "Reloading #{name} (zero-downtime)"
-      exec "exec", container_id, name, "reload", *args
+      run "exec", container_id, name, "reload", *args
 
       log "Reload complete"
     end
@@ -296,11 +295,11 @@ module Deploy
     def start_service(name, image, *args)
       if running?("service", name)
         Shell.log "Rolling out #{image} to existing #{name} service"
-        exec "service", "update", name, "--image", image
+        run "service", "update", name, "--image", image
       else
         Shell.log "Creating #{name} service"
 
-        exec "service", "create",
+        run "service", "create",
           "--name", name,
           "--network", NETWORK,
           *args,
@@ -323,13 +322,26 @@ module Deploy
 
     def secret(...) = secrets(...).first
 
-    def remove(stack)
-      exec "stack", "rm", stack
+    def update_secret(item, hex, data)
+      name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
+      log "Creating secret #{name}"
+
+      _, status = exec "secret", "create", name,
+        "--label", "cast.secrets=#{item}",
+        "--label", "cast.hash=#{hex}",
+        "-", stdin_data: data
+
+      raise "secret create failed: #{out}" unless status.success?
+
+      name
     end
+
+    def remove(stack) = run "stack", "rm", stack
 
     private
 
-    def exec(*cmd, **opts)  = Shell.run("docker", "--context", context, *cmd, **opts)
+    def run(*cmd, **opts)  = Shell.run("docker", "--context", context, *cmd, **opts)
+    def exec(*cmd, **opts)  = Shell.exec("docker", "--context", context, *cmd, **opts)
     def read(*args, **opts) = Shell.read("docker", "--context", context, *args, **opts)
     def log(...) = Shell.log(...)
 
@@ -376,7 +388,7 @@ class SetupDocker < Dry::CLI::Command
     # Always reset: recreating a context is cheap, and unconditionally
     # doing so avoids a stale context silently pointing at a server that
     # no longer exists (e.g. after swapping in a replacement droplet).
-    docker("context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
+    docker("context", "rm", "-f", context)
 
     log "Creating docker context #{context} -> #{host}"
     docker("context", "create", context, "--docker", "host=ssh://#{host}")
@@ -491,7 +503,7 @@ class Secrets < Dry::CLI::Command
     if exists
       log "Secret #{current} (#{hex}) already exists, skipping"
     else
-      name = update_secret(context, config.vault, hex, rendered)
+      name = swarm.update_secret(config.vault, hex, rendered)
     end
 
     puts "ENV_SECRET=#{name}"
@@ -512,21 +524,6 @@ class Secrets < Dry::CLI::Command
     json = JSON.parse resp
 
     (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
-  end
-
-  def update_secret(context, item, hex, rendered)
-    name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
-    log "Creating secret #{name}"
-
-    out, status = Open3.capture2e("docker", "--context", context,
-      "secret", "create", name,
-      "--label", "cast.secrets=#{item}",
-      "--label", "#{KEY}=#{hex}",
-      "-", stdin_data: rendered)
-
-    raise "secret create failed: #{out}" unless status.success?
-
-    name
   end
 end
 
