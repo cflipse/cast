@@ -167,10 +167,36 @@ module Deploy
 
     def push(ssh)
       dir = root("deploy", "caddy")
-      Shell.log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
+      log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
 
       ssh.exec!("mkdir -p #{CAST_ROOT}/caddy/branches")
       ssh.scp.upload!(File.join(dir, "Caddyfile"), "#{CAST_ROOT}/caddy/")
+    end
+  end
+
+  module Builder
+    extend self
+    include Shell
+
+    def app(config)
+      name = local_image("cast-#{config.slug}")
+
+      log("Building docker image locally: #{name}")
+      docker("build", "--target", "production", "-t", name, ".")
+
+      name
+    end
+
+    def caddy
+      dir = root("deploy", "caddy")
+      name = local_image("caddy")
+
+      # Build on THIS machine, not the VM's daemon, so the host never spends
+      # its own CPU/disk compiling images.
+      log "Building front-door Caddy image locally (#{name})"
+      docker("build", "-t", name, dir)
+
+      name
     end
   end
 end
@@ -267,48 +293,39 @@ class DeployCaddy < Dry::CLI::Command
 
   def call(context:)
     host = Shell.host(context)
-    build_caddy
+    local = Deploy::Builder.caddy
+    remote = ""
 
     SSH.connect(host) do |ssh|
       Deploy::Caddy.push(ssh)
 
-      publish(ssh, local_image("caddy"))
+      remote = publish(ssh, local)
     end
 
-    Deploy::Caddy.start(context, image("caddy"))
+    Deploy::Caddy.start(context, remote)
 
     log "Caddy update complete"
   end
 
   private
 
-  def build_caddy
-    dir = root("deploy", "caddy")
-    name = local_image("caddy")
-
-    # Build on THIS machine, not the VM's daemon, so the host never spends
-    # its own CPU/disk compiling images.
-    log "Building front-door Caddy image locally (#{name})"
-    docker("build", "-t", name, dir)
-  end
-
-
   def publish(ssh, local_image)
+    remote_image = ""
     log "Tunneling to the registry and pushing"
     # Local side uses TUNNEL_PORT (not REGISTRY_PORT) since some other
     # process on this machine may already be bound to REGISTRY_PORT.
 
-    begin
-      SSH.tunnel(ssh) do |port|
-        image = "localhost:#{port}/#{local_image}"
-        begin
-          docker "tag", local_image, image
-          docker "push", image 
-        ensure
-          docker "rm", "-f", image
-        end
+    SSH.tunnel(ssh) do |port|
+      remote_image = "localhost:#{port}/#{local_image}"
+      begin
+        docker "tag", local_image, remote_image
+        docker "push", remote_image 
+      ensure
+        docker "rm", "-f", remote_image
       end
     end
+
+    "localhost:#{Constants::REGISTRY_PORT}/#{local_image}"
   end
 end
 
@@ -481,8 +498,7 @@ class DeployDocker < Dry::CLI::Command
     config = Deploy::Config.for('staging')
     host = Shell.host(context)
 
-    local = local_image("cast-#{config.slug}")
-    build_image(local)
+    local = Deploy::Builder.app(config)
 
     SSH.connect(host) do |ssh|
       push_image(ssh, local)
@@ -498,11 +514,6 @@ class DeployDocker < Dry::CLI::Command
   end
 
   private
-
-  def build_image(name)
-    log("Building docker image locally: #{name}")
-    docker("build", "--target", "production", "-t", name, ".")
-  end
 
   def push_image(ssh, local)
     SSH.tunnel(ssh) do |port|
