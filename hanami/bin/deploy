@@ -9,9 +9,7 @@ require "open3"
 require "pathname"
 
 module Constants
-  REGISTRY_PORT = 5555
   NETWORK = "swarm-network"
-  REGISTRY_SERVICE = "registry"
   CAST_ROOT = "/srv/cast"
 end
 
@@ -53,7 +51,6 @@ module Shell
   end
 
   def local_image(name) = [name, image_version].join(":")
-  def image(*) = "localhost:#{Constants::REGISTRY_PORT}/#{local_image(*)}"
 
   def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
 
@@ -109,7 +106,7 @@ module SSH
     Net::SSH.start(hostname, user, &)
   end
 
-  def tunnel(ssh, remote_port = Constants::REGISTRY_PORT)
+  def tunnel(ssh, remote_port)
     port = ssh.forward.local(0, "localhost", remote_port)
 
     running = true
@@ -199,6 +196,44 @@ module Deploy
       name
     end
   end
+
+  module Registry
+    extend self
+    include Shell
+
+    REGISTRY_SERVICE = "registry".freeze
+    REGISTRY_PORT = 5555
+
+    def publish(ssh, local)
+      SSH.tunnel(ssh, REGISTRY_PORT) do |port|
+        image = "localhost:#{port}/#{local}"
+        begin
+          docker "tag", local, image
+          docker "push", image 
+        ensure
+          docker "rm", "-f", image
+        end
+      end
+
+      # return the image tag for the remote registry image
+      "localhost:#{REGISTRY_PORT}/#{local}"
+    end
+
+    def create(context)
+      if service_running?(context, REGISTRY_SERVICE)
+        log "Service #{REGISTRY_SERVICE} already running, skipping"
+      else
+        log "Deploying registry on 127.0.0.1:#{REGISTRY_PORT}"
+        swarm(context, "service", "create",
+            "--name", REGISTRY_SERVICE,
+            "--network", NETWORK,
+            "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
+            "--constraint", "node.role==manager",
+            "--mount", "type=volume,source=registry-data,destination=/var/lib/registry",
+            "registry:2")
+      end
+    end
+  end
 end
 
 class SetupDocker < Dry::CLI::Command
@@ -219,7 +254,7 @@ class SetupDocker < Dry::CLI::Command
 
     docker_swarm_init(context, ip)
     create_overlay_network(context)
-    deploy_registry(context)
+    Deploy::Registry.create(context)
   end
 
   private
@@ -268,18 +303,6 @@ class SetupDocker < Dry::CLI::Command
   end
 
   def deploy_registry(context)
-    if service_running?(context, REGISTRY_SERVICE)
-      log "Service #{REGISTRY_SERVICE} already running, skipping"
-    else
-      log "Deploying registry on 127.0.0.1:#{REGISTRY_PORT}"
-      swarm(context, "service", "create",
-          "--name", REGISTRY_SERVICE,
-          "--network", NETWORK,
-          "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
-          "--constraint", "node.role==manager",
-          "--mount", "type=volume,source=registry-data,destination=/var/lib/registry",
-          "registry:2")
-    end
   end
 end
 
@@ -299,33 +322,12 @@ class DeployCaddy < Dry::CLI::Command
     SSH.connect(host) do |ssh|
       Deploy::Caddy.push(ssh)
 
-      remote = publish(ssh, local)
+      remote = Deploy::Registry.publish(ssh, local)
     end
 
     Deploy::Caddy.start(context, remote)
 
     log "Caddy update complete"
-  end
-
-  private
-
-  def publish(ssh, local_image)
-    remote_image = ""
-    log "Tunneling to the registry and pushing"
-    # Local side uses TUNNEL_PORT (not REGISTRY_PORT) since some other
-    # process on this machine may already be bound to REGISTRY_PORT.
-
-    SSH.tunnel(ssh) do |port|
-      remote_image = "localhost:#{port}/#{local_image}"
-      begin
-        docker "tag", local_image, remote_image
-        docker "push", remote_image 
-      ensure
-        docker "rm", "-f", remote_image
-      end
-    end
-
-    "localhost:#{Constants::REGISTRY_PORT}/#{local_image}"
   end
 end
 
@@ -468,12 +470,12 @@ class DeployDocker < Dry::CLI::Command
     local = Deploy::Builder.app(config)
 
     SSH.connect(host) do |ssh|
-      push_image(ssh, local)
+      remote = Deploy::Registry.publish(ssh, local)
 
       ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/data")
       ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/redis")
 
-      deploy_stack(context, config)
+      deploy_stack(context, config, image)
       enable_caddy(ssh, config)
     end
 
@@ -482,24 +484,12 @@ class DeployDocker < Dry::CLI::Command
 
   private
 
-  def push_image(ssh, local)
-    SSH.tunnel(ssh) do |port|
-      image = "localhost:#{port}/#{local}"
-      begin
-        docker "tag", local, image
-        docker "push", image 
-      ensure
-        docker "rm", "-f", image
-      end
-    end
-  end
-
-  def deploy_stack(context, config)
+  def deploy_stack(context, config, image)
     template = File.read(root("deploy", "stack.yml.erb"))
 
     stack = ERB.new(template, trim_mode: "-").result_with_hash(
       deployment: config.slug,
-      image: Shell.image("cast-#{config.slug}"),
+      image: image,
       env_secret: swarm_secrets(context, config.vault).first,
       root_dir: Constants::CAST_ROOT,
       network: Constants::NETWORK,
