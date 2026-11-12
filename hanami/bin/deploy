@@ -7,6 +7,7 @@ require "net/scp"
 
 require "open3"
 require "pathname"
+require "erb"
 
 module Constants
   NETWORK = "swarm-network"
@@ -216,6 +217,21 @@ module Deploy
     end
   end
 
+  module Template
+    extend self
+
+    def render(path, **fields) = erb(path).result_with_hash(**fields)
+    def bind(path, binding) = erb(path).result(binding)
+
+    private
+
+    def erb(path)
+      template = File.read(Shell.root(path))
+
+      ERB.new(template, trim_mode: "-")
+    end
+  end
+
   Swarm = Data.define(:context) do
     NETWORK = "swarm-network"
 
@@ -240,7 +256,13 @@ module Deploy
       ).strip.split("//",2).last
     end
 
-    def deploy_stack(name, data)
+    def deploy_stack(name, template, **fields)
+      data = Template.render(template,
+        root_dir: Constants::CAST_ROOT,
+        network: Constants::NETWORK,
+        **fields
+      )
+
       stream "docker", "--context", context, "stack", "deploy",
         "--compose-file", "-", "--detach=false", name, stdin_data: data
     end
@@ -423,7 +445,8 @@ end
 
 class Secrets < Dry::CLI::Command
   include Shell
-  include Constants
+
+  KEY = "cast.hash"
 
   desc "add secrets to docker swarm"
 
@@ -443,17 +466,15 @@ class Secrets < Dry::CLI::Command
     prepare
 
     config = Deploy::Config.for('staging')
+    swarm = Deploy::Swarm.new(context)
 
     fields = fetch_fields(config.vault)
-    rendered = ERB.new(File.read(root(template)), trim_mode: "-")
-                  .result(Renderer.new(fields).binding_for_erb)
+    rendered = Deploy::Template.bind(template, Renderer.new(fields).binding_for_erb)
 
     hex = Digest::SHA256.hexdigest(rendered)[..16]
 
-    swarm = Deploy::Swarm.new(context)
-
     current, secrets = swarm.secrets(config.vault)
-    exists = secrets.dig(current, "cast.hash") == hex
+    exists = secrets.dig(current, KEY) == hex
 
     if dry_run
       puts "==> #{hex}"
@@ -493,7 +514,7 @@ class Secrets < Dry::CLI::Command
     out, status = Open3.capture2e("docker", "--context", context,
       "secret", "create", name,
       "--label", "cast.secrets=#{item}",
-      "--label", "cast.hash=#{hex}",
+      "--label", "#{KEY}=#{hex}",
       "-", stdin_data: rendered)
 
     raise "secret create failed: #{out}" unless status.success?
@@ -509,13 +530,7 @@ class DeployDocker < Dry::CLI::Command
 
   option :context, default: "cast", desc: "local docker context"
 
-  def prepare
-    require "erb"
-  end
-
   def call(context:)
-    prepare
-
     config = Deploy::Config.for('staging')
     swarm = Deploy::Swarm.new(context)
 
@@ -527,29 +542,16 @@ class DeployDocker < Dry::CLI::Command
 
       remote = Deploy::Registry.publish(conn, local)
 
-      deploy_stack(context, config, remote)
+      swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
+        deployment: config.slug,
+        image: remote,
+        env_secret: swarm.secret(config.vault),
+      )
 
       Deploy::Caddy.add_domain(conn, config)
     end
 
     Deploy::Caddy.reload(swarm)
-  end
-
-  private
-
-  def deploy_stack(context, config, image)
-    template = File.read(root("deploy", "stack.yml.erb"))
-    swarm = Deploy::Swarm.new(context)
-
-    stack = ERB.new(template, trim_mode: "-").result_with_hash(
-      deployment: config.slug,
-      image: image,
-      env_secret: swarm.secret(config.vault),
-      root_dir: Constants::CAST_ROOT,
-      network: Constants::NETWORK,
-    )
-
-    swarm.deploy_stack(config.stack, stack)
   end
 end
 
