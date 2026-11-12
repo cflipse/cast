@@ -21,7 +21,10 @@ module Shell
 
   def run(*cmd, **opts)
     puts "+ #{cmd.join(' ')}"
-    capture(*cmd, **opts)
+
+    out, status = Shell.exec(*cmd, **opts)
+    raise "command failed" unless status.success?
+    out
   end
 
   def stream(*cmd, stdin_data:)
@@ -37,17 +40,17 @@ module Shell
     raise "command failed: #{cmd.join(' ')}" unless status.success?
   end
 
+  def tail(*cmd, **opts, &)
+    IO.popen(cmd, err: [:child, :out]) do |io|
+      io.each_line(&)
+    end
+  end
+
   def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
   def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
 
   def docker(*cmd, **opts) = run("docker", *cmd, **opts)
-
-  def capture(*cmd, **opts)
-    out, status = Open3.capture2(*cmd, **opts)
-    raise "command failed: #{cmd.join(' ')}" unless status.success?
-
-    out
-  end
+  def exec(*cmd, **opts) = Open3.capture2(*cmd, **opts)
 end
 
 module SSH
@@ -181,7 +184,7 @@ module Deploy
     # caddy:bootstrap) makes `docker service update --image` a silent no-op,
     # since Swarm only notices a change when the tag itself differs.
     def image_version
-      capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
+      run("git", "-C", root, "rev-parse", "--short", "HEAD").strip
     rescue StandardError
       Time.now.to_i.to_s
     end
@@ -251,7 +254,7 @@ module Deploy
     # Not actually run on the swarm, but most conceptually associated with the
     # swarm
     def host
-      capture("docker", "context", "inspect", context,
+      run("docker", "context", "inspect", context,
         "--format", "{{.Endpoints.docker.Host}}"
       ).strip.split("//",2).last
     end
@@ -324,7 +327,7 @@ module Deploy
     private
 
     def exec(*cmd, **opts)  = run("docker", "--context", context, *cmd, **opts)
-    def read(*args, **opts) = capture("docker", "--context", context, *args, **opts)
+    def read(*args, **opts) = run("docker", "--context", context, *args, **opts)
 
     def running?(kind, name)
       read(kind, "ls", "--format", "{{.Name}}").lines(chomp: true).include?(name)
@@ -503,7 +506,9 @@ class Secrets < Dry::CLI::Command
   end
 
   def fetch_fields(item)
-    json = JSON.parse(capture("bw", "get", "item", item))
+    json = IO.popen(["bw", "get", "item", item], &:read)
+      .then { JSON.parse it }
+
     (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
   end
 
@@ -572,9 +577,7 @@ class TailLogs < Dry::CLI::Command
            "--tail", tail, "--since", since, "#{config.stack}_#{service}"]
     cmd << "--follow" if follow
 
-    IO.popen(cmd, err: [:child, :out]) do |io|
-      io.each_line { |l| puts l unless l.include?('"path":"/up"') }
-    end
+    tail(*cmd)  { |l| puts l unless l.include?('"path":"/up"') }
   end
 end
 
@@ -605,7 +608,7 @@ module Deploy
       Staging.new(name, slug)
     end
 
-    def self.branch = Shell.capture("git", "branch", "--show-current").strip
+    def self.branch = Shell.exec("git", "branch", "--show-current").first.strip
   end
 
   module CLI
