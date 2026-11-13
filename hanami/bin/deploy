@@ -206,6 +206,12 @@ module Deploy
     end
   end
 
+  module Litestream
+    extend self
+
+    REPLICA="s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/production/cast"
+  end
+
   module Docker
     extend self
 
@@ -314,7 +320,6 @@ module Deploy
     extend self
 
     def render(path, **fields) = erb(path).result_with_hash(**fields)
-    def bind(path, binding) = erb(path).result(binding)
 
     private
 
@@ -322,6 +327,35 @@ module Deploy
       template = File.read(Shell.root(path))
 
       ERB.new(template, trim_mode: "-")
+    end
+  end
+
+  module Vault
+    extend self
+
+    def init
+      require "digest"
+      require "json"
+    end
+
+    def fetch(vault)
+      resp = IO.popen(["bw", "get", "item", vault], &:read)
+      raise "unable to read secrets" unless Process.last_status.success?
+
+      json = JSON.parse resp
+      fields = json["fields"].to_a
+
+      raise "No Secrets in vault" if fields.empty?
+
+      fields.map { |h| h.values_at("name", "value") }.sort.to_h
+    end
+
+    def hex(rendered) = Digest::SHA256.hexdigest(rendered)[..16]
+
+    def render(template, fields)
+      rendered = Template.render(template, secrets: fields)
+
+      [hex(rendered), rendered]
     end
   end
 
@@ -407,16 +441,25 @@ module Deploy
 
     def secret(...) = secrets(...).first
 
+    def current_secret(vault, hex)
+      current, all = secrets(vault)
+      current if all.dig(current, "cast.hash") == hex
+    end
+
     def update_secret(item, hex, data)
-      name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
-      log "Creating secret #{name}"
+      if(current = current_secret(item, hex))
+        Shell.log "Secret #{current} (#{hex}) already exists, skipping"
+      else
+        name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
+        log "Creating secret #{name}"
 
-      read "secret", "create", name,
-        "--label", "cast.secrets=#{item}",
-        "--label", "cast.hash=#{hex}",
-        "-", stdin_data: data
+        read "secret", "create", name,
+          "--label", "cast.secrets=#{item}",
+          "--label", "cast.hash=#{hex}",
+          "-", stdin_data: data
 
-      name
+        name
+      end
     end
 
     def remove(stack) = run "stack", "rm", stack
@@ -482,69 +525,31 @@ module Deploy
       end
 
       class Secrets < Dry::CLI::Command
-        KEY = "cast.hash"
-
         desc "add secrets to docker swarm"
 
         option :template, default: "deploy/env.erb", desc: "ERB env template"
         option :context, default: "cast", desc: "local docker context"
         option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
 
-        def prepare
-          require "shellwords"
-          require "digest"
-          require "erb"
-          require "json"
-          require "time"
-        end
-
         def call(template:, dry_run:, context:)
-          prepare
-
           config = Config.for('staging')
           swarm = Swarm.new(context)
+          Vault.init
 
-          fields = fetch_fields(config.vault)
-          rendered = Template.bind(template, Renderer.new(fields).binding_for_erb)
+          fields = Vault.fetch(config.vault)
 
-          hex = Digest::SHA256.hexdigest(rendered)[..16]
-
-          current, secrets = swarm.secrets(config.vault)
-          exists = secrets.dig(current, KEY) == hex
+          hex, rendered = Vault.render(template, fields)
+          current = swarm.current_secret(config.vault, hex)
 
           if dry_run
             puts "==> #{hex}"
-            rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
+            puts Vault.render(template, fields.transform_values { "<masked>" }).last
 
-            puts "\n==> exists upstream #{current}" if exists
+            puts "\n==> exists upstream #{current}" if current
             return
           end
 
-          name = current
-          if exists
-            Shell.log "Secret #{current} (#{hex}) already exists, skipping"
-          else
-            name = swarm.update_secret(config.vault, hex, rendered)
-          end
-
-          puts "ENV_SECRET=#{name}"
-        end
-
-        private
-
-        Renderer = Data.define(:fields) do
-          def secret(name) = fields.fetch(name.to_s) { raise KeyError, "Bitwarden item has no custom field #{name.inspect}" }
-          def sh(value) = value.to_s.shellescape
-          def binding_for_erb = binding
-        end
-
-        def fetch_fields(item)
-          resp = IO.popen(["bw", "get", "item", item], &:read)
-          raise "unable to read secrets" unless Process.last_status.success?
-
-          json = JSON.parse resp
-
-          (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
+          swarm.update_secret(config.vault, hex, rendered)
         end
       end
 
