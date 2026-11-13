@@ -529,20 +529,23 @@ module Deploy
 
         option :context, default: "cast", desc: "local docker context"
         option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
-        option :scopes, type: :array, desc: "secret scopes",
-          default: [:app]
+        option :scopes, type: :array, optional: true, desc: "secret scopes"
 
-        TEMPLATES = { app: "deploy/env.erb" }
+        TEMPLATES = {
+          app: "deploy/env.erb",
+          litestream: "deploy/litestream.yml.erb",
+        }
 
-        def call(dry_run:, context:, scopes:)
+        def call(dry_run:, context:, scopes: [])
           config = Config.for('staging')
           swarm = Swarm.new(context)
           Vault.init
 
           fields = Vault.fetch(config.vault)
 
-          TEMPLATES.slice(*scopes.map(&:to_sym)).each do |scope, file|
-            template = Shell.root(file)
+          scopes = TEMPLATES.keys if scopes.empty?
+
+          TEMPLATES.slice(*scopes.map(&:to_sym)).each do |scope, template|
             hex, rendered = Vault.render(template, fields)
 
             puts "==> #{scope}:  #{hex}"

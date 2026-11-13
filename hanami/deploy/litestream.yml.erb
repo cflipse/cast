@@ -1,0 +1,8 @@
+dbs:
+  - dir: /data
+    pattern: "*.sqlite3"
+    recursive: true
+    replica:
+      url: s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/${RACK_ENV}/cast
+      access-key-id: <%= secrets.fetch("litestream_key_id") %>
+      secret-access-key: <%= secrets.fetch("litestream_key_secret") %>
