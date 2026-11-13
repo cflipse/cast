@@ -33,13 +33,20 @@ module Deploy
     def self.for(name, production: false)
       return Production if production
 
-      slug = branch.to_s.downcase.gsub(/[^[:alnum:]]/, '-')
+      slug = Git.branch.downcase.gsub(/[^[:alnum:]]/, '-')
       raise "unknown target" if slug.empty?
 
       Staging.new(name, slug)
     end
+  end
 
-    def self.branch = Shell.read("git", "branch", "--show-current").strip
+  module Git
+    extend self
+    def branch = git("branch", "--show-current").strip
+    def sha = git("rev-parse", "--short", "HEAD").strip
+
+    private
+    def git(*) = Shell.read("git", "-C", Shell.root, *)
   end
 
   module Shell
@@ -143,7 +150,6 @@ module Deploy
 
   module Caddy
     extend self
-    include Shell
 
     CADDY_SERVICE = "caddy".freeze
 
@@ -153,7 +159,7 @@ module Deploy
         deployment: config.slug,
       )
 
-      log "Updating #{config.slug}.caddy file"
+      Shell.log "Updating #{config.slug}.caddy file"
 
       Remote.upload conn, StringIO.new(caddy), 
         "caddy/branches/#{config.slug}.caddy"
@@ -179,8 +185,8 @@ module Deploy
     end
 
     def push(ssh)
-      dir = root("deploy", "caddy")
-      log "Ensuring Caddyfile is current"
+      dir = Shell.root("deploy", "caddy")
+      Shell.log "Ensuring Caddyfile is current"
 
       Remote.upload(ssh, File.join(dir, "Caddyfile"), "caddy/")
     end
@@ -196,7 +202,7 @@ module Deploy
 
       Caddy.start(swarm, remote)
 
-      log "Caddy update complete"
+      Shell.log "Caddy update complete"
     end
   end
 
@@ -252,24 +258,23 @@ module Deploy
 
   module Builder
     extend self
-    include Shell
 
     def app(config)
       name = local_image("cast-#{config.slug}")
 
-      log("Building docker image locally: #{name}")
+      Shell.log("Building docker image locally: #{name}")
       Docker.build(name, "--target", "production", ".")
 
       name
     end
 
     def caddy
-      dir = root("deploy", "caddy")
+      dir = Shell.root("deploy", "caddy")
       name = local_image("caddy")
 
       # Build on THIS machine, not the VM's daemon, so the host never spends
       # its own CPU/disk compiling images.
-      log "Building front-door Caddy image locally (#{name})"
+      Shell.log "Building front-door Caddy image locally (#{name})"
       Docker.build(name, dir)
 
       name
@@ -277,18 +282,11 @@ module Deploy
 
     private
 
-    def local_image(name) = [name, image_version].join(":")
-
-    # Tag by content (git SHA, same convention bin/deploy uses for app
-    # images) so every build gets a distinct tag. A reused static tag (e.g.
-    # caddy:bootstrap) makes `docker service update --image` a silent no-op,
-    # since Swarm only notices a change when the tag itself differs.
-    def image_version = read("git", "-C", root, "rev-parse", "--short", "HEAD").strip
+    def local_image(name) = [name, Git.sha].join(":")
   end
 
   module Registry
     extend self
-    include Shell
 
     REGISTRY_SERVICE = "registry".freeze
     REGISTRY_PORT = 5555
@@ -484,8 +482,6 @@ module Deploy
       end
 
       class Secrets < Dry::CLI::Command
-        include Shell
-
         KEY = "cast.hash"
 
         desc "add secrets to docker swarm"
@@ -526,7 +522,7 @@ module Deploy
 
           name = current
           if exists
-            log "Secret #{current} (#{hex}) already exists, skipping"
+            Shell.log "Secret #{current} (#{hex}) already exists, skipping"
           else
             name = swarm.update_secret(config.vault, hex, rendered)
           end
