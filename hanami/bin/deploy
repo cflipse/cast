@@ -7,596 +7,8 @@ require "net/scp"
 
 require "open3"
 require "pathname"
+require "erb"
 
-module Constants
-  REGISTRY_PORT = 5555
-  NETWORK = "swarm-network"
-  REGISTRY_SERVICE = "registry"
-  CADDY_SERVICE = "caddy"
-  CAST_ROOT = "/srv/cast"
-end
-
-module Shell
-  module_function
-
-  def log(message) = puts "==> #{message}"
-
-  def run(*cmd, **opts)
-    puts "+ #{cmd.join(' ')}"
-    capture(*cmd, **opts)
-  end
-
-  # Tag by content (git SHA, same convention bin/deploy uses for app
-  # images) so every build gets a distinct tag. A reused static tag (e.g.
-  # caddy:bootstrap) makes `docker service update --image` a silent no-op,
-  # since Swarm only notices a change when the tag itself differs.
-  def image_version
-    capture("git", "-C", root, "rev-parse", "--short", "HEAD").strip
-  rescue StandardError
-    Time.now.to_i.to_s
-  end
-
-  def stream(*cmd, stdin_data:)
-    puts "+ #{cmd.join(' ')}"
-
-    r, w = IO.pipe
-    pid = Process.spawn(*cmd, in: r)
-    r.close
-    w.write(stdin_data)
-    w.close
-    _, status = Process.wait2(pid)
-
-    raise "command failed: #{cmd.join(' ')}" unless status.success?
-  end
-
-  def local_image(name) = [name, image_version].join(":")
-  def image(*) = "localhost:#{Constants::REGISTRY_PORT}/#{local_image(*)}"
-
-  def success?(*cmd) = system(*cmd, out: File::NULL, err: File::NULL)
-
-  def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
-
-  def service_running?(context, name)
-    swarm_read(context, "service", "ls", "--format", "{{.Name}}")
-      .lines(chomp: true)
-      .include?(name)
-  end
-
-  def network_running?(context, name)
-    swarm_read(context, "network", "ls", "--format", "{{.Name}}")
-      .lines(chomp: true)
-      .include?(name)
-  end
-
-  def docker(*cmd, **opts) = run("docker", *cmd, **opts)
-  def host(context) = capture("docker", "context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}").strip.split("//",2).last
-
-  def swarm(context, *cmd, **opts) = run("docker", "--context", context, *cmd, **opts)
-  def swarm_read(context, *args, **opts) = capture("docker", "--context", context, *args, **opts)
-
-  def swarm_secrets(context, item)
-    existing = swarm_read(context, "secret", "ls",
-      "--filter", "label=cast.secrets=#{item}",
-      "--format", "{{.Name}}\t{{.Labels}}"
-    )
-
-    secrets = existing.lines(chomp: true).to_h do |line|
-      sec, labels = line.split("\t", 2)
-      [sec, labels.split(",").to_h { it.split("=", 2) }]
-    end
-
-    [secrets.keys.max, secrets]
-  end
-
-  def capture(*cmd, **opts)
-    out, status = Open3.capture2(*cmd, **opts)
-    raise "command failed: #{cmd.join(' ')}" unless status.success?
-
-    out
-  end
-end
-
-module SSH
-  extend self
-
-  def connect(host, &)
-    user, hostname = host.split("@", 2)
-    user, hostname = "root", user if hostname.nil?
-
-    Net::SSH.start(hostname, user, &)
-  end
-
-  def tunnel(ssh, remote_port = Constants::REGISTRY_PORT)
-    port = ssh.forward.local(0, "localhost", remote_port)
-
-    running = true
-    # keep the connection flowing in the background
-    worker = Thread.new { ssh.loop(0.1) { running }}
-
-    begin
-      yield port
-    ensure
-      running = false
-      worker.value
-    end
-  end
-end
-
-class SetupDocker < Dry::CLI::Command
-  include Shell
-  include Constants
-
-  argument :host, required: true, desc: "ssh user@host"
-  option :context, default: "cast", desc: "local docker context"
-
-  def call(host:, context:)
-    ip = nil
-    create_docker_context(host, context)
-
-    SSH.connect(host) do |ssh|
-      ip = public_ip(ssh)
-      install_docker(ssh)
-    end
-
-    docker_swarm_init(context, ip)
-    create_overlay_network(context)
-    deploy_registry(context)
-  end
-
-  private
-
-  def public_ip(ssh)
-    ssh.exec!("curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address").strip
-  end
-
-  def install_docker(ssh)
-    if ssh.exec!("command -v docker").exitstatus == 0
-      log "Docker already installed on #{ssh.host}, skipping"
-    else
-      log "Installing Docker on #{ssh.host}"
-      ssh.exec! "curl -fsSL https://get.docker.com | sh"
-    end
-  end
-
-  def create_docker_context(host, context)
-    # Always reset: recreating a context is cheap, and unconditionally
-    # doing so avoids a stale context silently pointing at a server that
-    # no longer exists (e.g. after swapping in a replacement droplet).
-    docker("context", "rm", "-f", context) if success?("docker", "context", "inspect", context)
-
-    log "Creating docker context #{context} -> #{host}"
-    docker("context", "create", context, "--docker", "host=ssh://#{host}")
-  end
-
-  def docker_swarm_init(context, ip)
-    swarm_state = swarm_read(context, "info", "--format", "{{.Swarm.LocalNodeState}}").strip
-
-    if swarm_state == "active"
-      log "Already part of a swarm, skipping swarm init"
-    else
-      log "Initializing swarm"
-      swarm(context, "swarm", "init", "--advertise-addr", ip)
-    end
-  end
-
-  def create_overlay_network(context)
-    if network_running?(context, NETWORK)
-      log "Network #{NETWORK} already exists, skipping"
-    else
-      log "Creating overlay network #{NETWORK}"
-      swarm(context, "network", "create", "--driver", "overlay", "--attachable", NETWORK)
-    end
-  end
-
-  def deploy_registry(context)
-    if service_running?(context, REGISTRY_SERVICE)
-      log "Service #{REGISTRY_SERVICE} already running, skipping"
-    else
-      log "Deploying registry on 127.0.0.1:#{REGISTRY_PORT}"
-      swarm(context, "service", "create",
-          "--name", REGISTRY_SERVICE,
-          "--network", NETWORK,
-          "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
-          "--constraint", "node.role==manager",
-          "--mount", "type=volume,source=registry-data,destination=/var/lib/registry",
-          "registry:2")
-    end
-  end
-end
-
-class DeployCaddy < Dry::CLI::Command
-  include Shell
-  include Constants
-
-  desc "deploy a new caddy image"
-
-  option :context, default: "cast", desc: "local docker context"
-
-  def call(context:)
-    host = Shell.host(context)
-    build_caddy
-
-    SSH.connect(host) do |ssh|
-      push_caddyfile(ssh)
-      publish(ssh, local_image("caddy"))
-    end
-
-    start_caddy(context, image("caddy"))
-
-    log "Caddy update complete"
-  end
-
-  private
-
-  def build_caddy
-    dir = root("deploy", "caddy")
-    name = local_image("caddy")
-
-    # Build on THIS machine, not the VM's daemon, so the host never spends
-    # its own CPU/disk compiling images.
-    log "Building front-door Caddy image locally (#{name})"
-    docker("build", "-t", name, dir)
-  end
-
-  def push_caddyfile(ssh)
-    dir = root("deploy", "caddy")
-    log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
-
-    ssh.exec!("mkdir -p #{CAST_ROOT}/caddy/branches")
-    ssh.scp.upload!(File.join(dir, "Caddyfile"), "#{CAST_ROOT}/caddy/")
-  end
-
-
-  def publish(ssh, local_image)
-    log "Tunneling to the registry and pushing"
-    # Local side uses TUNNEL_PORT (not REGISTRY_PORT) since some other
-    # process on this machine may already be bound to REGISTRY_PORT.
-
-    begin
-      SSH.tunnel(ssh) do |port|
-        image = "localhost:#{port}/#{local_image}"
-        begin
-          docker "tag", local_image, image
-          docker "push", image 
-        ensure
-          docker "rm", "-f", image
-        end
-      end
-    end
-  end
-
-  def start_caddy(context, remote_image)
-    if service_running?(context, "caddy")
-      log "Rolling out #{remote_image} to existing caddy service"
-      swarm(context, "service", "update", "--image", remote_image, "caddy")
-    else
-      log "Creating caddy service"
-      swarm(context, "service", "create",
-          "--name", CADDY_SERVICE,
-          "--network", NETWORK,
-          "--publish", "published=80,target=80,mode=host",
-          "--publish", "published=443,target=443,mode=host",
-          "--mount", "type=volume,source=caddy-data,destination=/data",
-          "--mount", "type=volume,source=caddy-config,destination=/config",
-          "--mount", "type=bind,source=#{CAST_ROOT}/caddy/Caddyfile,destination=/etc/caddy/Caddyfile",
-          "--mount", "type=bind,source=#{CAST_ROOT}/caddy/branches,destination=/etc/caddy/branches",
-          remote_image)
-    end
-  end
-end
-
-class ReloadCaddy < Dry::CLI::Command
-  include Shell
-  include Constants
-
-  desc "reload a caddy configuration"
-
-  option :context, default: "cast", desc: "local docker context"
-
-  def call(context:)
-    host = Shell.host(context)
-
-    SSH.connect(host) do |ssh|
-      push_caddyfile(ssh)
-    end
-
-    restart_caddy(context)
-  end
-
-  private
-
-  def push_caddyfile(ssh)
-    dir = root("deploy", "caddy")
-    log "Ensuring #{CAST_ROOT}/caddy/branches exists and Caddyfile is current"
-
-    ssh.exec!("mkdir -p #{CAST_ROOT}/caddy/branches")
-    ssh.scp.upload!(File.join(dir, "Caddyfile"), "#{CAST_ROOT}/caddy/")
-  end
-
-  def restart_caddy(context)
-    container_id = swarm_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
-      .lines(chomp: true).first
-
-    unless container_id
-      abort "No running #{CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
-    end
-
-    log "Reloading Caddy config (zero-downtime)"
-    swarm(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
-
-    log "Reload complete"
-  end
-end
-
-class Teardown < Dry::CLI::Command
-  include Shell
-  include Constants
-
-  option :context, default: "cast", desc: "local docker context"
-
-  def call(context:)
-    config = Deploy::Config.for("staging")
-    host = Shell.host(context)
-
-    swarm(context, "stack", "rm", config.stack)
-
-    SSH.connect(host) do |ssh|
-      ssh.exec!("rm -f #{CAST_ROOT}/caddy/branches/#{config.slug}.caddy")
-
-      ssh.exec!("rm -rf #{CAST_ROOT}/#{config.slug}")
-    end
-
-    restart_caddy(context)
-  end
-
-  private
-
-
-  def restart_caddy(context)
-    container_id = swarm_read(context, "ps", "--filter", "name=#{CADDY_SERVICE}", "--format", "{{.ID}}")
-      .lines(chomp: true).first
-
-    unless container_id
-      abort "No running #{CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
-    end
-
-    log "Reloading Caddy config (zero-downtime)"
-    swarm(context, "exec", container_id, CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
-
-    log "Reload complete"
-  end
-
-end
-
-class Secrets < Dry::CLI::Command
-  include Shell
-  include Constants
-
-  desc "add secrets to docker swarm"
-
-  option :template, default: "deploy/env.erb", desc: "ERB env template"
-  option :context, default: "cast", desc: "local docker context"
-  option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
-
-  def prepare
-    require "shellwords"
-    require "digest"
-    require "erb"
-    require "json"
-    require "time"
-  end
-
-  def call(template:, dry_run:, context:)
-    prepare
-    host = Shell.host(context)
-    config = Deploy::Config.for('staging')
-
-    fields = fetch_fields(config.vault)
-    rendered = ERB.new(File.read(root(template)), trim_mode: "-")
-                  .result(Renderer.new(fields).binding_for_erb)
-
-    hex = Digest::SHA256.hexdigest(rendered)[..16]
-
-    current, secrets = swarm_secrets(context, config.vault)
-    exists = secrets.dig(current, "cast.hash") == hex
-
-    if dry_run
-      puts "==> #{hex}"
-      rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
-
-      puts "\n==> exists upstream #{current}" if exists
-      return
-    end
-
-    name = current
-    if exists
-      log "Secret #{current} (#{hex}) already exists, skipping"
-    else
-      name = update_secret(context, config.vault, hex, rendered)
-    end
-
-    puts "ENV_SECRET=#{name}"
-  end
-
-  private
-
-  Renderer = Data.define(:fields) do
-    def secret(name) = fields.fetch(name.to_s) { raise KeyError, "Bitwarden item has no custom field #{name.inspect}" }
-    def sh(value) = value.to_s.shellescape
-    def binding_for_erb = binding
-  end
-
-  def fetch_fields(item)
-    json = JSON.parse(capture("bw", "get", "item", item))
-    (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
-  end
-
-  def update_secret(context, item, hex, rendered)
-    name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
-    log "Creating secret #{name}"
-
-    out, status = Open3.capture2e("docker", "--context", context,
-      "secret", "create", name,
-      "--label", "cast.secrets=#{item}",
-      "--label", "cast.hash=#{hex}",
-      "-", stdin_data: rendered)
-
-    raise "secret create failed: #{out}" unless status.success?
-
-    name
-  end
-end
-
-class RenderStack < Dry::CLI::Command
-  include Constants
-  include Shell
-
-  desc "render the docker compose stack"
-
-  option :context, default: "cast", desc: "local docker context"
-  option :dry_run, default: false, type: :boolean, desc: "test the stack render", aliases: ["-n"]
-
-  def prepare
-    require "erb"
-  end
-
-  def call(context:, dry_run:)
-    prepare
-    config ||= Deploy::Config.for("staging")
-
-    template = File.read(root("deploy", "stack.yml.erb"))
-
-    stack = ERB.new(template, trim_mode: "-").result_with_hash(
-      deployment: config.slug,
-      image: Shell.image("cast-#{config.slug}"),
-      env_secret: swarm_secrets(context, config.vault).first,
-      root_dir: CAST_ROOT,
-      network: NETWORK,
-    )
-
-    if dry_run
-      puts stack
-    end
-  end
-end
-
-class DeployDocker < Dry::CLI::Command
-  include Shell
-
-  desc "deploy the current branch"
-
-  option :context, default: "cast", desc: "local docker context"
-
-  def prepare
-    require "erb"
-  end
-
-  def call(context:)
-    prepare
-
-    config = Deploy::Config.for('staging')
-    host = Shell.host(context)
-
-    local = local_image("cast-#{config.slug}")
-    build_image(local)
-
-    SSH.connect(host) do |ssh|
-      push_image(ssh, local)
-
-      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/data")
-      ssh.exec!("mkdir -p #{Constants::CAST_ROOT}/#{config.slug}/redis")
-
-      deploy_stack(context, config)
-      enable_caddy(ssh, config)
-      restart_caddy(context)
-    end
-  end
-
-  private
-
-  def build_image(name)
-    log("Building docker image locally: #{name}")
-    docker("build", "--target", "production", "-t", name, ".")
-  end
-
-  def push_image(ssh, local)
-    SSH.tunnel(ssh) do |port|
-      image = "localhost:#{port}/#{local}"
-      begin
-        docker "tag", local, image
-        docker "push", image 
-      ensure
-        docker "rm", "-f", image
-      end
-    end
-  end
-
-  def deploy_stack(context, config)
-    template = File.read(root("deploy", "stack.yml.erb"))
-
-    stack = ERB.new(template, trim_mode: "-").result_with_hash(
-      deployment: config.slug,
-      image: Shell.image("cast-#{config.slug}"),
-      env_secret: swarm_secrets(context, config.vault).first,
-      root_dir: Constants::CAST_ROOT,
-      network: Constants::NETWORK,
-    )
-
-    stream "docker", "--context", context, "stack", "deploy",
-      "--compose-file", "-", "--detach=false", config.stack, 
-      stdin_data: stack
-  end
-
-  def enable_caddy(ssh, config)
-    template = File.read(root("deploy", "branch.caddy.erb"))
-
-    caddy = ERB.new(template, trim_mode: "-").result_with_hash(
-      domain: config.domain,
-      deployment: config.slug,
-    )
-
-    log "Updating #{config.slug}.caddy file"
-    ssh.scp.upload! StringIO.new(caddy),
-      "#{Constants::CAST_ROOT}/caddy/branches/#{config.slug}.caddy"
-  end
-
-  def restart_caddy(context)
-    container_id = swarm_read(context, "ps", "--filter", "name=#{Constants::CADDY_SERVICE}", "--format", "{{.ID}}")
-      .lines(chomp: true).first
-
-    unless container_id
-      abort "No running #{Constants::CADDY_SERVICE} container found -- deploy it first with deploy/update-caddy"
-    end
-
-    log "Reloading Caddy config (zero-downtime)"
-    swarm(context, "exec", container_id, Constants::CADDY_SERVICE, "reload", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile")
-
-    log "Reload complete"
-  end
-end
-
-class TailLogs < Dry::CLI::Command
-  include Shell
-
-  option :context, default: "cast", desc: "local docker context"
-  option :follow, default: false, type: :boolean, aliases: ["-f"]
-  option :service, default: "app"
-  option :tail, default: "200", type: :boolean, aliases: ["-t"]
-  option :since, default: "10m", aliases: ["-s"]
-
-
-  def call(context:, follow:, service:, tail:, since:)
-    config = Deploy::Config.for("staging")
-
-    cmd = ["docker", "--context", context, "service", "logs", "--timestamps",
-           "--tail", tail, "--since", since, "#{config.stack}_#{service}"]
-    cmd << "--follow" if follow
-
-    IO.popen(cmd, err: [:child, :out]) do |io|
-      io.each_line { |l| puts l unless l.include?('"path":"/up"') }
-    end
-  end
-end
 
 module Deploy
   module Config
@@ -615,22 +27,575 @@ module Deploy
     Staging = Data.define(:name, :slug) do
       def vault = "cast.staging"
       def domain = "#{slug}.cast.athas.org"
-      def stack = "cast-#{name}"
+      def stack = "cast-#{slug}"
     end
 
     def self.for(name, production: false)
       return Production if production
 
-      slug = branch.to_s.downcase.gsub(/[^[:alnum:]]/, '-')
+      slug = Git.branch.downcase.gsub(/[^[:alnum:]]/, '-')
+      raise "unknown target" if slug.empty?
+
       Staging.new(name, slug)
     end
+  end
 
-    def self.branch = Shell.capture("git", "branch", "--show-current").strip
+  module Git
+    extend self
+    def branch = git("branch", "--show-current").strip
+    def sha = git("rev-parse", "--short", "HEAD").strip
+
+    private
+    def git(*) = Shell.read("git", "-C", Shell.root, *)
+  end
+
+  module Shell
+    module_function
+
+    def log(message) = puts "==> #{message}"
+
+    def run(*cmd, **opts)
+      puts "+ #{cmd.join(' ')}"
+      Shell.read(*cmd, **opts)
+    end
+
+    def read(*cmd, **opts)
+      out, err, status = Open3.capture3(*cmd, **opts)
+      raise "command failed #{cmd.join(' ')} : #{err}" unless status.success?
+      out
+    end
+
+    def stream(*cmd, stdin_data:)
+      puts "+ #{cmd.join(' ')}"
+
+      r, w = IO.pipe
+      pid = Process.spawn(*cmd, in: r)
+      r.close
+      w.write(stdin_data)
+      w.close
+      _, status = Process.wait2(pid)
+
+      raise "command failed: #{cmd.join(' ')}" unless status.success?
+    end
+
+    def tail(*cmd, &)
+      IO.popen(cmd, err: [:child, :out]) do |io|
+        io.each_line(&)
+      end
+    end
+
+    def root(*parts) = Pathname.new(__dir__).join("..", *parts).to_s
+  end
+
+  module Remote
+    extend self
+
+    PATH = "/srv/cast".freeze
+
+    def path(sub) = Pathname.new(PATH).join(sub)
+
+    def init(conn)
+      conn.exec!("sudo mkdir -p #{PATH} && sudo chown \"$(id -u):$(id -g)\" #{PATH}")
+
+      mkdir(conn, "caddy/branches")
+    end
+
+    def mkdir(conn, subdir)
+      conn.exec!("mkdir -p #{path subdir}")
+    end
+
+    def rm(conn, target)
+      raise "Refusing to delete an empty target" if target.to_s.strip.empty?
+
+      conn.exec!("rm -rf #{path target}")
+    end
+
+    def upload(conn, io, dest)
+      Shell.log "uploading file to #{dest}"
+      path = Remote.path(dest)
+
+      conn.scp.upload! io, path.to_s
+    end
+  end
+
+  module SSH
+    extend self
+
+    def connect(host, &)
+      user, hostname = host.split("@", 2)
+      user, hostname = "root", user if hostname.nil?
+
+      Net::SSH.start(hostname, user, &)
+    end
+
+    def tunnel(conn, remote_port)
+      port = conn.forward.local(0, "localhost", remote_port)
+
+      running = true
+      # keep the connection flowing in the background
+      worker = Thread.new { conn.loop(0.1) { running }}
+
+      begin
+        yield port
+      ensure
+        running = false
+        worker.value
+      end
+    end
+
+    def public_ip(conn)
+      conn.exec!("curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address").strip
+    end
+  end
+
+  module Caddy
+    extend self
+
+    CADDY_SERVICE = "caddy".freeze
+
+    def add_domain(conn, config)
+      caddy = Template.render("deploy/branch.caddy.erb",
+        domain: config.domain,
+        deployment: config.slug,
+      )
+
+      Shell.log "Updating #{config.slug}.caddy file"
+
+      Remote.upload conn, StringIO.new(caddy), 
+        "caddy/branches/#{config.slug}.caddy"
+    end
+
+    def drop_domain(conn, config)
+      Remote.rm conn, "caddy/branches/#{config.slug}.caddy"
+    end
+
+    def reload(swarm)
+      swarm.exec_in CADDY_SERVICE, "reload",
+        "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"
+    end
+
+    def start(swarm, remote_image)
+      swarm.start_service CADDY_SERVICE, remote_image,
+        "--publish", "published=80,target=80,mode=host",
+        "--publish", "published=443,target=443,mode=host",
+        "--mount", "type=volume,source=caddy-data,destination=/data",
+        "--mount", "type=volume,source=caddy-config,destination=/config",
+        "--mount", "type=bind,source=#{Remote.path 'caddy/Caddyfile'},destination=/etc/caddy/Caddyfile",
+        "--mount", "type=bind,source=#{Remote.path 'caddy/branches'},destination=/etc/caddy/branches"
+    end
+
+    def push(ssh)
+      dir = Shell.root("deploy", "caddy")
+      Shell.log "Ensuring Caddyfile is current"
+
+      Remote.upload(ssh, File.join(dir, "Caddyfile"), "caddy/")
+    end
+
+    def deploy(swarm)
+      local = Builder.caddy
+      remote = ""
+
+      SSH.connect(swarm.host) do |ssh|
+        push(ssh)
+        remote = Registry.publish(ssh, local)
+      end
+
+      Caddy.start(swarm, remote)
+
+      Shell.log "Caddy update complete"
+    end
+  end
+
+  module Docker
+    extend self
+
+    def set_context(host, context)
+      # Always reset: recreating a context is cheap, and unconditionally
+      # doing so avoids a stale context silently pointing at a server that
+      # no longer exists (e.g. after swapping in a replacement droplet).
+      run("context", "rm", "-f", context)
+
+      log "Creating docker context #{context} -> #{host}"
+      run("context", "create", context, "--docker", "host=ssh://#{host}")
+    end
+
+    def install(ssh)
+      if ssh.exec!("command -v docker").exitstatus == 0
+        log "Docker already installed on #{ssh.host}, skipping"
+      else
+        log "Installing Docker on #{ssh.host}"
+        ssh.exec! "curl -fsSL https://get.docker.com | sh"
+      end
+    end
+
+    def publish(local, image)
+      run "tag", local, image
+      run "push", image 
+    ensure
+      run "rmi", image
+    end
+
+    def build(tag, *args) = run("build", "-t", tag, *args)
+
+    private
+
+    def run(*cmd, **opts) = Shell.run("docker", *cmd, **opts)
+    def log(...) = Shell.log(...)
+  end
+
+  module Stack
+    extend self
+
+    def prepare(conn, config)
+      Remote.mkdir(conn, "#{config.slug}/data")
+      Remote.mkdir(conn, "#{config.slug}/redis")
+    end
+
+    def purge(conn, config)
+      Remote.rm(conn, config.slug)
+    end
+  end
+
+  module Builder
+    extend self
+
+    def app(config)
+      name = local_image("cast-#{config.slug}")
+
+      Shell.log("Building docker image locally: #{name}")
+      Docker.build(name, "--target", "production", ".")
+
+      name
+    end
+
+    def caddy
+      dir = Shell.root("deploy", "caddy")
+      name = local_image("caddy")
+
+      # Build on THIS machine, not the VM's daemon, so the host never spends
+      # its own CPU/disk compiling images.
+      Shell.log "Building front-door Caddy image locally (#{name})"
+      Docker.build(name, dir)
+
+      name
+    end
+
+    private
+
+    def local_image(name) = [name, Git.sha].join(":")
+  end
+
+  module Registry
+    extend self
+
+    REGISTRY_SERVICE = "registry".freeze
+    REGISTRY_PORT = 5555
+
+    def publish(ssh, local)
+      SSH.tunnel(ssh, REGISTRY_PORT) do |port|
+        image = "localhost:#{port}/#{local}"
+
+        Docker.publish(local, image)
+      end
+
+      # return the image tag for the remote registry image
+      "localhost:#{REGISTRY_PORT}/#{local}"
+    end
+
+    def create(swarm)
+      swarm.start_service REGISTRY_SERVICE, "registry:2",
+        "--publish", "published=#{REGISTRY_PORT},target=5000,mode=host",
+        "--constraint", "node.role==manager",
+        "--mount", "type=volume,source=registry-data,destination=/var/lib/registry"
+    end
+  end
+
+  module Template
+    extend self
+
+    def render(path, **fields) = erb(path).result_with_hash(**fields)
+    def bind(path, binding) = erb(path).result(binding)
+
+    private
+
+    def erb(path)
+      template = File.read(Shell.root(path))
+
+      ERB.new(template, trim_mode: "-")
+    end
+  end
+
+  Swarm = Data.define(:context) do
+    NETWORK = "swarm-network"
+
+    def init(ip)
+      state = read("info", "--format", "{{.Swarm.LocalNodeState}}").strip
+
+      if state == "active"
+        log "Already part of a swarm, skipping swarm init"
+      else
+        log "Initializing swarm"
+        run("swarm", "init", "--advertise-addr", ip)
+      end
+    end
+
+    def host
+      Shell.read("docker", "context", "inspect", context,
+        "--format", "{{.Endpoints.docker.Host}}"
+      ).strip.split("//",2).last
+    end
+
+    def deploy_stack(name, template, **fields)
+      data = Template.render(template,
+        root_dir: Remote::PATH,
+        network: NETWORK,
+        **fields
+      )
+
+      Shell.stream "docker", "--context", context, "stack", "deploy",
+        "--compose-file", "-", "--detach=false", name, stdin_data: data
+    end
+
+    def create_overlay_network
+      if running?("network", NETWORK)
+        log "Network #{NETWORK} already exists, skipping"
+      else
+        log "Creating overlay network #{NETWORK}"
+        run("network", "create", "--driver", "overlay", "--attachable", NETWORK)
+      end
+    end
+
+    def exec_in(name, *args)
+      container_id = read("ps", "--filter", "name=#{name}", "--format", "{{.ID}}")
+        .lines(chomp: true).first
+
+      abort "No running #{name}.  Deploy it first" unless container_id
+
+      log "running in #{name}: #{args.join(' ')} "
+      run "exec", container_id, name, *args
+
+      log "complete"
+    end
+
+    def start_service(name, image, *args)
+      if running?("service", name)
+        Shell.log "Rolling out #{image} to existing #{name} service"
+        run "service", "update", name, "--image", image
+      else
+        Shell.log "Creating #{name} service"
+
+        run "service", "create",
+          "--name", name,
+          "--network", NETWORK,
+          *args,
+          image
+      end
+    end
+
+    def secrets(item)
+      existing = read "secret", "ls",
+        "--filter", "label=cast.secrets=#{item}",
+        "--format", "{{.Name}}\t{{.Labels}}"
+
+      secrets = existing.lines(chomp: true).to_h do |line|
+        sec, labels = line.split("\t", 2)
+        [sec, labels.split(",").to_h { it.split("=", 2) }]
+      end
+
+      [secrets.keys.max, secrets]
+    end
+
+    def secret(...) = secrets(...).first
+
+    def update_secret(item, hex, data)
+      name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
+      log "Creating secret #{name}"
+
+      read "secret", "create", name,
+        "--label", "cast.secrets=#{item}",
+        "--label", "cast.hash=#{hex}",
+        "-", stdin_data: data
+
+      name
+    end
+
+    def remove(stack) = run "stack", "rm", stack
+
+    private
+
+    def run(*cmd, **opts)  = Shell.run("docker", "--context", context, *cmd, **opts)
+    def read(*args, **opts) = Shell.read("docker", "--context", context, *args, **opts)
+    def log(...) = Shell.log(...)
+
+    def running?(kind, name)
+      read(kind, "ls", "--format", "{{.Name}}").lines(chomp: true).include?(name)
+    end
   end
 
   module CLI
     module Commands
       extend Dry::CLI::Registry
+
+      class DeployCaddy < Dry::CLI::Command
+        desc "deploy a new caddy image"
+
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(context:)
+          swarm = Swarm.new(context)
+          Caddy.deploy(swarm)
+        end
+      end
+
+      class ReloadCaddy < Dry::CLI::Command
+        desc "reload a caddy configuration"
+
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(context:)
+          swarm = Swarm.new(context)
+
+          SSH.connect(swarm.host) do |ssh|
+            Caddy.push(ssh)
+          end
+
+          Caddy.reload(swarm)
+        end
+      end
+
+      class Teardown < Dry::CLI::Command
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(context:)
+          config = Config.for("staging")
+          swarm = Swarm.new(context)
+
+          swarm.remove(config.stack)
+
+          SSH.connect(swarm.host) do |conn|
+            Caddy.drop_domain(conn, config)
+            Stack.purge(conn, config)
+          end
+
+          Caddy.reload(swarm)
+        end
+      end
+
+      class Secrets < Dry::CLI::Command
+        KEY = "cast.hash"
+
+        desc "add secrets to docker swarm"
+
+        option :template, default: "deploy/env.erb", desc: "ERB env template"
+        option :context, default: "cast", desc: "local docker context"
+        option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
+
+        def prepare
+          require "shellwords"
+          require "digest"
+          require "erb"
+          require "json"
+          require "time"
+        end
+
+        def call(template:, dry_run:, context:)
+          prepare
+
+          config = Config.for('staging')
+          swarm = Swarm.new(context)
+
+          fields = fetch_fields(config.vault)
+          rendered = Template.bind(template, Renderer.new(fields).binding_for_erb)
+
+          hex = Digest::SHA256.hexdigest(rendered)[..16]
+
+          current, secrets = swarm.secrets(config.vault)
+          exists = secrets.dig(current, KEY) == hex
+
+          if dry_run
+            puts "==> #{hex}"
+            rendered.each_line { |line| puts line.sub(/=.*/m, "=<masked>") unless line.start_with?("#") || line.strip.empty? }
+
+            puts "\n==> exists upstream #{current}" if exists
+            return
+          end
+
+          name = current
+          if exists
+            Shell.log "Secret #{current} (#{hex}) already exists, skipping"
+          else
+            name = swarm.update_secret(config.vault, hex, rendered)
+          end
+
+          puts "ENV_SECRET=#{name}"
+        end
+
+        private
+
+        Renderer = Data.define(:fields) do
+          def secret(name) = fields.fetch(name.to_s) { raise KeyError, "Bitwarden item has no custom field #{name.inspect}" }
+          def sh(value) = value.to_s.shellescape
+          def binding_for_erb = binding
+        end
+
+        def fetch_fields(item)
+          resp = IO.popen(["bw", "get", "item", item], &:read)
+          raise "unable to read secrets" unless Process.last_status.success?
+
+          json = JSON.parse resp
+
+          (json["fields"] || []).to_h { |f| [f["name"], f["value"]] }
+        end
+      end
+
+      class DeployDocker < Dry::CLI::Command
+        desc "deploy the current branch"
+
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(context:)
+          config = Config.for('staging')
+          swarm = Swarm.new(context)
+
+          local = Builder.app(config)
+          remote = ""
+
+          SSH.connect(swarm.host) do |conn|
+            Stack.prepare(conn, config)
+
+            remote = Registry.publish(conn, local)
+
+            Caddy.add_domain(conn, config)
+          end
+
+          swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
+            deployment: config.slug,
+            image: remote,
+            env_secret: swarm.secret(config.vault),
+          )
+
+          Caddy.reload(swarm)
+        end
+      end
+
+      class TailLogs < Dry::CLI::Command
+        option :context, default: "cast", desc: "local docker context"
+        option :follow, default: false, type: :boolean, aliases: ["-f"]
+        option :service, default: "app"
+        option :tail, default: "200", type: :string, aliases: ["-t"]
+        option :since, default: "10m", aliases: ["-s"]
+
+
+        def call(context:, follow:, service:, tail:, since:)
+          config = Config.for("staging")
+
+          cmd = ["docker", "--context", context, "service", "logs", "--timestamps",
+                 "--tail", tail, "--since", since, "#{config.stack}_#{service}"]
+          cmd << "--follow" if follow
+
+          Shell.tail(*cmd)  { |l| puts l unless l.include?('"path":"/up"') }
+        end
+      end
 
       class Version < Dry::CLI::Command
         desc "show current version"
@@ -638,38 +603,41 @@ module Deploy
       end
 
       class Bootstrap < Dry::CLI::Command
-        include Constants
-
         desc "set up a new server"
 
         argument :host, required: true, desc: "ssh user@host"
         option :context, default: "cast", desc: "local docker context"
 
-        def call(opts)
-          SSH.connect host do |ssh|
-            Shell.log "Creating #{CAST_ROOT}"
-            ssh.exec! "sudo mkdir -p #{CAST_ROOT} && sudo chown \"$(id -u):$(id -g)\" #{CAST_ROOT}"
+        def call(host:, context:)
+          Docker.set_context(host, context)
+          swarm = Swarm.new(context)
+          ip = ""
+
+          SSH.connect host do |conn|
+            Remote.init(conn)
+            Docker.install(conn)
+            ip = SSH.public_ip(conn)
           end
 
-          SetupDocker.new.call(host:, context:)
-          DeployCaddy.new.call(context:)
+          swarm.init(ip)
+          swarm.create_overlay_network
+
+          Registry.create(swarm)
+          Caddy.deploy(swarm)
         end
       end
 
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "bootstrap", Bootstrap
-      register "deploy", ::DeployDocker
-      register "swarm install", ::SetupDocker
-      register "caddy deploy", ::DeployCaddy
-      register "caddy reload", ::ReloadCaddy
-      register "secrets sync", ::Secrets
-      register "stack render", ::RenderStack
-      register "logs", ::TailLogs
-      register "teardown", ::Teardown
+      register "deploy", DeployDocker
+      register "caddy update", DeployCaddy
+      register "caddy reload", ReloadCaddy
+      register "secrets sync", Secrets
+      register "logs", TailLogs
+      register "teardown", Teardown
     end
   end
 end
 
 Dry::CLI.new(Deploy::CLI::Commands).call
-
 # vim:syntax=ruby
