@@ -426,9 +426,10 @@ module Deploy
       end
     end
 
-    def secrets(item)
+    def secrets(item, scope)
       existing = read "secret", "ls",
         "--filter", "label=cast.secrets=#{item}",
+        "--filter", "label=cast.scope=#{scope}",
         "--format", "{{.Name}}\t{{.Labels}}"
 
       secrets = existing.lines(chomp: true).to_h do |line|
@@ -441,24 +442,23 @@ module Deploy
 
     def secret(...) = secrets(...).first
 
-    def current_secret(vault, hex)
-      current, all = secrets(vault)
+    def current_secret(vault, scope, hex)
+      current, all = secrets(vault, scope)
       current if all.dig(current, "cast.hash") == hex
     end
 
-    def update_secret(item, hex, data)
-      if(current = current_secret(item, hex))
+    def update_secret(item, scope, hex, data)
+      if(current = current_secret(item, scope, hex))
         Shell.log "Secret #{current} (#{hex}) already exists, skipping"
       else
-        name = "#{item.gsub('.', '-')}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
+        name = "#{item.gsub('.', '-')}-#{scope}-#{Time.now.utc.iso8601.gsub(/[:-]/, '')}"
         log "Creating secret #{name}"
 
         read "secret", "create", name,
           "--label", "cast.secrets=#{item}",
+          "--label", "cast.scope=#{scope}",
           "--label", "cast.hash=#{hex}",
           "-", stdin_data: data
-
-        name
       end
     end
 
@@ -527,29 +527,40 @@ module Deploy
       class Secrets < Dry::CLI::Command
         desc "add secrets to docker swarm"
 
-        option :template, default: "deploy/env.erb", desc: "ERB env template"
         option :context, default: "cast", desc: "local docker context"
         option :dry_run, type: :boolean, default: false, desc: "print keys only, create nothing", aliases: ["-n"]
+        option :scopes, type: :array, desc: "secret scopes",
+          default: [:app]
 
-        def call(template:, dry_run:, context:)
+        TEMPLATES = { app: "deploy/env.erb" }
+
+        def call(dry_run:, context:, scopes:)
           config = Config.for('staging')
           swarm = Swarm.new(context)
           Vault.init
 
           fields = Vault.fetch(config.vault)
 
-          hex, rendered = Vault.render(template, fields)
-          current = swarm.current_secret(config.vault, hex)
+          TEMPLATES.slice(*scopes.map(&:to_sym)).each do |scope, file|
+            template = Shell.root(file)
+            hex, rendered = Vault.render(template, fields)
 
-          if dry_run
-            puts "==> #{hex}"
-            puts Vault.render(template, fields.transform_values { "<masked>" }).last
+            puts "==> #{scope}:  #{hex}"
 
-            puts "\n==> exists upstream #{current}" if current
-            return
+            if dry_run
+              current = swarm.current_secret(config.vault, scope, hex)
+              dump(current, template, fields)
+            else
+              swarm.update_secret(config.vault, scope, hex, rendered)
+            end
           end
+        end
 
-          swarm.update_secret(config.vault, hex, rendered)
+        private
+
+        def dump(current, template, fields)
+          puts Vault.render(template, fields.transform_values { "<masked>" }).last
+          puts "\n==> exists upstream #{current}" if current
         end
       end
 
@@ -576,7 +587,7 @@ module Deploy
           swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
             deployment: config.slug,
             image: remote,
-            env_secret: swarm.secret(config.vault),
+            env_secret: swarm.secret(config.vault, :app),
           )
 
           Caddy.reload(swarm)
