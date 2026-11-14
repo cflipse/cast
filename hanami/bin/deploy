@@ -210,6 +210,23 @@ module Deploy
     extend self
 
     REPLICA="s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/production/cast"
+
+    def restore(swarm, config)
+      secret = swarm.secret(config.vault, :litestream)
+
+      abort "Sync your secrets first" unless secret
+
+      swarm.action "restore-#{config.slug}",
+        "--restart-condition", "none",
+        "--constraint", "node.role==manager",
+        "--env", "RACK_ENV=production",
+        "--secret", "source=#{secret},target=litestream.yml",
+        "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
+        "litestream/litestream:0.5", "restore",
+          "-config", "/run/secrets/litestream.yml", 
+          "-o", "/data/cast.sqlite",
+          "-if-db-not-exists", "/data/cast.sqlite"
+    end
   end
 
   module Docker
@@ -411,6 +428,14 @@ module Deploy
       log "complete"
     end
 
+    def action(name, *args)
+      run "service", "rm", name if running?("service", name)
+
+      run "service", "create", "--name", name, *args
+    ensure
+      run "service", "rm", name if running?("service", name)
+    end
+
     def start_service(name, image, *args)
       if running?("service", name)
         Shell.log "Rolling out #{image} to existing #{name} service"
@@ -586,6 +611,8 @@ module Deploy
 
             Caddy.add_domain(conn, config)
           end
+
+          Litestream.restore(swarm, config)
 
           swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
             deployment: config.slug,
