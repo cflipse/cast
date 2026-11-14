@@ -433,6 +433,9 @@ module Deploy
         "--restart-condition", "none",
         "--constraint", "node.role==manager",
         *args
+
+      wait_for(name)
+
     ensure
       run "service", "rm", name if running?("service", name)
     end
@@ -442,7 +445,7 @@ module Deploy
         state = read("service", "ps", name, "--format", "{{.CurrentState}}").lines(chomp: true).first
 
         return if state.start_with?("Complete")
-        raise "#{name} failed: #{state}" if state.start_with("Failed", "Rejected")
+        raise "#{name} failed: #{state}" if state.start_with?("Failed", "Rejected")
 
         sleep 1
       end
@@ -616,6 +619,9 @@ module Deploy
           local = Builder.app(config)
           remote = ""
 
+          secrets = swarm.secret(config.vault, :app)
+          abort "Synchronize secrets!" unless secrets
+
           SSH.connect(swarm.host) do |conn|
             Stack.prepare(conn, config)
 
@@ -626,10 +632,19 @@ module Deploy
 
           Litestream.restore(swarm, config)
 
+          swarm.action "migrate-#{config.slug}",
+            "--env", "RACK_ENV=production",
+            "--env", "DATABASE_URL=sqlite:///data/cast.sqlite",
+            "--secret", "source=#{secrets},target=env",
+
+            "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
+            remote,
+            "bundle", "exec", "hanami", "db", "prepare"
+
           swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
             deployment: config.slug,
             image: remote,
-            env_secret: swarm.secret(config.vault, :app),
+            env_secret: secrets,
           )
 
           Caddy.reload(swarm)

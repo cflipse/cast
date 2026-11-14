@@ -11,7 +11,6 @@ services:
       HANAMI_ENV: production
       REDIS_URL: redis://redis:6379
       DATABASE_URL: sqlite:///data/cast.sqlite
-      RUN_MIGRATIONS: "true"
     volumes:
       - type: bind
         source: <%= root_dir %>/<%= deployment %>/data
@@ -30,11 +29,11 @@ services:
     deploy:
       replicas: 1
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: pause
         monitor: 15s
       rollback_config:
-        order: start-first
+        order: stop-first
       restart_policy:
         condition: on-failure
 
