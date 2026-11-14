@@ -217,8 +217,6 @@ module Deploy
       abort "Sync your secrets first" unless secret
 
       swarm.action "restore-#{config.slug}",
-        "--restart-condition", "none",
-        "--constraint", "node.role==manager",
         "--env", "RACK_ENV=production",
         "--secret", "source=#{secret},target=litestream.yml",
         "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
@@ -431,9 +429,23 @@ module Deploy
     def action(name, *args)
       run "service", "rm", name if running?("service", name)
 
-      run "service", "create", "--name", name, *args
+      run "service", "create", "--detach", "--name", name,
+        "--restart-condition", "none",
+        "--constraint", "node.role==manager",
+        *args
     ensure
       run "service", "rm", name if running?("service", name)
+    end
+
+    def wait_for(name)
+      loop do
+        state = read("service", "ps", name, "--format", "{{.CurrentState}}").lines(chomp: true).first
+
+        return if state.start_with?("Complete")
+        raise "#{name} failed: #{state}" if state.start_with("Failed", "Rejected")
+
+        sleep 1
+      end
     end
 
     def start_service(name, image, *args)

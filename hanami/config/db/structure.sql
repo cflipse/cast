@@ -1,4 +1,5 @@
-CREATE TABLE IF NOT EXISTS "ar_internal_metadata"(
+CREATE TABLE "schema_migrations"("version" varchar NOT NULL PRIMARY KEY);
+CREATE TABLE "ar_internal_metadata"(
   "key" varchar NOT NULL PRIMARY KEY,
   "value" varchar,
   "created_at" datetime(6) NOT NULL,
@@ -6,7 +7,9 @@ CREATE TABLE IF NOT EXISTS "ar_internal_metadata"(
 );
 CREATE TABLE _litestream_seq(id INTEGER PRIMARY KEY, seq INTEGER);
 CREATE TABLE _litestream_lock(id INTEGER);
-CREATE TABLE `schema_migrations`(`filename` varchar(255) NOT NULL PRIMARY KEY);
+CREATE TABLE `cast_schema_migrations`(
+  `filename` varchar(255) NOT NULL PRIMARY KEY
+);
 CREATE TABLE `podcasts`(
   `id` INTEGER DEFAULT(NULL) NOT NULL PRIMARY KEY AUTOINCREMENT,
   `uuid` varchar(255) DEFAULT(NULL) NULL,
@@ -29,7 +32,8 @@ CREATE TABLE `profiles`(
   `persistence_token` varchar(255) DEFAULT(NULL) NULL,
   `bio` TEXT DEFAULT(NULL) NULL,
   `avatar` varchar(255) DEFAULT(NULL) NULL,
-  `roles` json DEFAULT('[]') NOT NULL, `admin` boolean DEFAULT(0) NULL,
+  `roles` json DEFAULT('[]') NOT NULL,
+  `admin` boolean DEFAULT(0) NULL,
   `created_at` datetime(6) DEFAULT(datetime(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
   `updated_at` datetime(6) DEFAULT(datetime(CURRENT_TIMESTAMP, 'localtime')) NOT NULL
 );
@@ -54,7 +58,8 @@ CREATE TABLE `episodes`(
   `created_at` datetime(6) DEFAULT(datetime(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
   `updated_at` datetime(6) DEFAULT(datetime(CURRENT_TIMESTAMP, 'localtime')) NOT NULL,
   `deleted_at` datetime(6) DEFAULT(NULL) NULL,
-  `slugs` json DEFAULT('[]') NOT NULL, FOREIGN KEY(`podcast_id`) REFERENCES `podcasts`(`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `slugs` json DEFAULT('[]') NOT NULL,
+  FOREIGN KEY(`podcast_id`) REFERENCES `podcasts`(`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 CREATE UNIQUE INDEX `index_episodes_on_uuid` ON `episodes`(`uuid`);
 CREATE INDEX `index_episodes_on_podcast_id` ON `episodes`(`podcast_id`);
@@ -76,6 +81,6 @@ CREATE INDEX `index_podcast_hosts_on_profile_id` ON `podcast_hosts`(
 CREATE INDEX `index_podcast_hosts_on_podcast_id` ON `podcast_hosts`(
   `podcast_id`
 );
-INSERT INTO schema_migrations (filename) VALUES
+INSERT INTO cast_schema_migrations (filename) VALUES
 ('20260728164117_initial.rb'),
 ('20260729141803_timestamps.rb');
