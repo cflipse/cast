@@ -30,10 +30,10 @@ module Deploy
       def stack = "cast-#{slug}"
     end
 
-    def self.for(name, production: false)
+    def self.for(name, production: false, slug: nil)
       return Production if production
 
-      slug = Git.branch.downcase.gsub(/[^[:alnum:]]/, '-')
+      slug ||= Git.branch.downcase.gsub(/[^[:alnum:]]/, '-')
       raise "unknown target" if slug.empty?
 
       Staging.new(name, slug)
@@ -548,9 +548,10 @@ module Deploy
 
       class Teardown < Dry::CLI::Command
         option :context, default: "cast", desc: "local docker context"
+        option :name, desc: "deployment name"
 
-        def call(context:)
-          config = Config.for("staging")
+        def call(context:, name: nil)
+          config = Config.for("staging", slug: name)
           swarm = Swarm.new(context)
 
           swarm.remove(config.stack)
