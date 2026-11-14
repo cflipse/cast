@@ -43,6 +43,9 @@ GEM
     coderay (1.1.3)
     concurrent-ruby (1.3.8)
     content_disposition (1.0.0)
+    crack (1.0.1)
+      bigdecimal
+      rexml
     csv (3.3.7)
     database_cleaner-core (2.0.1)
     database_cleaner-sequel (2.0.2)
@@ -223,6 +226,7 @@ GEM
     hanami-webconsole (3.0.0)
       better_errors (~> 2.10, >= 2.10.1)
       binding_of_caller (~> 2.0)
+    hashdiff (1.2.2)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     ice_nine (0.11.2)
@@ -429,6 +433,10 @@ GEM
       zeitwerk (~> 2.2)
     warden (1.2.9)
       rack (>= 2.0.9)
+    webmock (3.34.0)
+      addressable (>= 2.8.0)
+      crack (>= 0.3.2)
+      hashdiff (>= 0.4.0, < 2.0.0)
     xpath (3.2.0)
       nokogiri (~> 1.8)
     zeitwerk (2.8.3)
@@ -482,6 +490,7 @@ DEPENDENCIES
   tzinfo
   vite_ruby
   warden
+  webmock
 
 CHECKSUMS
   addressable (2.9.2) sha256=9117c7e7d6ee07230e75ce41fb9401ae55354dc654fcd0e862ba41d539e9a610
@@ -500,6 +509,7 @@ CHECKSUMS
   coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
   concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1
   content_disposition (1.0.0) sha256=aa153da9c1543a45413a3f5f281d8dd50384bb0fba864fe1bd42ba80d88da516
+  crack (1.0.1) sha256=ff4a10390cd31d66440b7524eb1841874db86201d5b70032028553130b6d4c7e
   csv (3.3.7) sha256=15a3f16f6628da8664d455eb634e7f22031bcf53044923caf56975109e71b9f8
   database_cleaner-core (2.0.1) sha256=8646574c32162e59ed7b5258a97a208d3c44551b854e510994f24683865d846c
   database_cleaner-sequel (2.0.2) sha256=f1e6566a1a34d7425ff94b447e2c16181bc215555aff3dfe463b7977b621d4bf
@@ -557,6 +567,7 @@ CHECKSUMS
   hanami-utils (3.0.1) sha256=0d46181bd86115127a04a6d0481df819eb558714ce58c6b4da7e0bb65c5dcd9b
   hanami-view (3.0.2) sha256=b145c23a720e76b05f178ef087340ffe27ea00495ec4d4a53bd1bd391fbb0592
   hanami-webconsole (3.0.0) sha256=5d8f46e1e2783e03403c58500cbad6274e2022cbc60867a7354442e6b60c2bdd
+  hashdiff (1.2.2) sha256=e2e287452b42f18d2a8d82dd48c435e214a81dbadccf49344b956842a3b9127f
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   ice_nine (0.11.2) sha256=5d506a7d2723d5592dc121b9928e4931742730131f22a1a37649df1c1e2e63db
   io-console (0.9.5) sha256=83dd9bbf4c4680416629245b39cd4212eb5f4d9a4ea91804870c1f6b846414d5
@@ -660,6 +671,7 @@ CHECKSUMS
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
   vite_ruby (3.11.1) sha256=51286571c86ae1639356755e141d5b191aac690e68d7ad52ef924a95c0710dcd
   warden (1.2.9) sha256=46684f885d35a69dbb883deabf85a222c8e427a957804719e143005df7a1efd0
+  webmock (3.34.0) sha256=72eed29dc8c00148d592acaedaaa6b869e2e397de57dfc8602b84aa834f46b33
   xpath (3.2.0) sha256=6dfda79d91bb3b949b947ecc5919f042ef2f399b904013eb3ef6d20dd3a4082e
   zeitwerk (2.8.3) sha256=2c85125a8467ce069e20123d1e709a08955c9d29c118c25b46b7b7fafdbb92e5
 

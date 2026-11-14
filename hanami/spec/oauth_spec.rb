@@ -1,6 +1,4 @@
-RSpec.describe Cast::OAuth do
-  let(:http) { class_double "Net::Http", :post_form }
-
+RSpec.describe Cast::OAuth, :http do
   let(:settings) {
     double("Cast::Settings",
       google_client_id: "my client",
@@ -9,7 +7,13 @@ RSpec.describe Cast::OAuth do
     )
   }
 
-  subject(:oauth) { described_class.new(settings:, http:) }
+  let(:token_url) { "https://oauth2.googleapis.com/token" }
+  let(:userinfo_url) { "https://www.googleapis.com/oauth2/v2/userinfo" }
+
+  before do
+  end
+
+  subject(:oauth) { described_class.new(settings:) }
 
   describe "authorization_uri" do
     let(:state) { "abc123" }
@@ -34,17 +38,17 @@ RSpec.describe Cast::OAuth do
       code: "sekret-squirrel",
     ]}
 
-    let(:body) { Hash[] }
+    let(:body) { Hash["access_token" => "access"] }
     let(:profile) { Hash[] }
     let(:token_resp) { Net::HTTPSuccess.new('1.1', "200", "OK") }
     let(:profile_resp) { Net::HTTPSuccess.new('1.1', "200", "OK") }
 
     before do
-      allow(http).to receive(:post_form).and_return(token_resp)
-      allow(token_resp).to receive(:body) { JSON.dump(body) }
+      stub_request(:post, token_url)
+        .to_return(body: ->(_){ JSON.dump(body) }, status: 200)
 
-      allow(http).to receive(:get).and_return(profile_resp)
-      allow(profile_resp).to receive(:body) { JSON.dump(profile) }
+      stub_request(:get, userinfo_url)
+        .to_return(body: ->(_){ JSON.dump(profile) }, status: 200)
     end
 
     context "when state does not match" do
@@ -57,12 +61,14 @@ RSpec.describe Cast::OAuth do
 
     it "posts to the googleAPI path" do
       res = oauth.call(params, state:)
-      expect(http).to have_received(:post_form)
-        .with("https://googleapis.com", anything)
+
+      expect(WebMock).to have_requested(:post, token_url)
     end
 
     context "failed call" do
-      let(:token_resp) { Net::HTTPResponse.new("1.1", "400", "bad request") }
+      before do
+        stub_request(:post, token_url).to_return status: 400
+      end
 
       it "is a failure" do
         res = oauth.call(params, state:)
@@ -76,7 +82,14 @@ RSpec.describe Cast::OAuth do
 
       oauth.call(params, state:)
 
-      expect(http).to have_received(:get).with("https://googleapis.com", hash_including("Authorization" => "Bearer access/12345"))
+      expect(WebMock).to have_requested(:get, userinfo_url)
+        .with(headers: {"Authorization" => "Bearer access/12345"})
+    end
+
+    it "fails when the access token is missing" do
+      body["access_token"] = nil
+
+      expect(oauth.call(params, state:)).to be_failure
     end
 
     it "extracts the profile from the response" do

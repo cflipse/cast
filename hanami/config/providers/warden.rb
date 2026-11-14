@@ -7,7 +7,7 @@ Hanami.app.register_provider(:warden) do
     slice.start(:db)
 
     Warden::Strategies.add(:oauth) do
-      def valid? = params["oauth_token"].present?
+      def valid? = params["oauth_token"].to_s != ""
 
       def authenticate!
         repo = Hanami.app["repos.profile_repo"]
@@ -18,6 +18,6 @@ Hanami.app.register_provider(:warden) do
     end
 
     Warden::Manager.serialize_into_session { |profile| profile.id }
-    Warden::Manager.serialize_from_session { |id| Hanami.app["repos.profile_repo"].by_pk(id).one }
+    Warden::Manager.serialize_from_session { |id| Hanami.app["repos.profiles_repo"].by_pk(id).one }
   end
 end

@@ -4,13 +4,13 @@ module Cast
 
     def authorization_uri(state:)
       scopes = %w[userinfo.email userinfo.profile]
-        .map { |scope| "https://www.googleapis.com/auth/scope" }
+        .map { |scope| "https://www.googleapis.com/auth/#{scope}" }
 
       params = URI.encode_www_form(
         client_id: settings.google_client_id,
         redirect_uri: settings.oauth_redirect_uri,
         response_type: "code",
-        scope: scopes,
+        scope: scopes.join(" "),
         prompt: "select_account",
         state:,
       )
@@ -27,10 +27,8 @@ module Cast
 
     private
 
-    def api_uri = "https://googleapis.com"
-
     def match_states(initial, received)
-      initial == received ? Success() : Failure[:invalid_state]
+      initial && (initial == received) ? Success() : Failure[:invalid_state]
     end
 
     def fetch_tokens(code)
@@ -42,24 +40,30 @@ module Cast
         code: code,
       }
 
-      resp = http.post_form(api_uri, payload)
+      url = URI("https://oauth2.googleapis.com/token")
+
+      resp = http.post_form(url, payload)
 
       case resp
       when Net::HTTPSuccess
-        Success JSON.parse(resp.body)["access_token"]
+        access_token = JSON.parse(resp.body)["access_token"]
+
+        access_token.to_s != "" ? Success(access_token) : Failure[:missing_token, resp]
       else
         Failure[:http, resp]
       end
     end
 
     def profile(token)
-      resp = http.get(api_uri, { "Authorization" => "Bearer #{token}" })
+      url = URI("https://www.googleapis.com/oauth2/v2/userinfo")
+
+      resp = http.get_response(url, { "Authorization" => "Bearer #{token}" })
 
       case resp
       when Net::HTTPSuccess
         Success JSON.parse(resp.body)
       else
-        Failure[:profile_fech, resp]
+        Failure[:profile_fetch, resp]
       end
     end
   end
