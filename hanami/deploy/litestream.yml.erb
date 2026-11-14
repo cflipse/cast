@@ -1,0 +1,6 @@
+dbs:
+  - path: /data/cast.sqlite
+    replica:
+      url: s3://dev-caffeine-litestream.nyc3.digitaloceanspaces.com/production/cast/cast.sqlite3
+      access-key-id: <%= secrets.fetch("litestream_key_id") %>
+      secret-access-key: <%= secrets.fetch("litestream_key_secret") %>

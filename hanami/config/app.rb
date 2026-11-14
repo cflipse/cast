@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "hanami"
+require "cast/migrations_patch"
 
 module Cast
   class App < Hanami::App
