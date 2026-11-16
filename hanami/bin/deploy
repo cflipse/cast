@@ -224,6 +224,14 @@ module Deploy
           "-o", "/data/cast.sqlite",
           "-if-db-not-exists", "/data/cast.sqlite"
     end
+
+    def derail(swarm, config)
+      swarm.action "derail-#{config.slug}",
+        "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
+        "alpine/sqlite",
+          "/data/cast.sqlite", 
+          "DROP TABLE IF EXISTS schema_migrations; DROP TABLE IF EXISTS ar_internal_metadata;"
+    end
   end
 
   module Docker
@@ -453,7 +461,7 @@ module Deploy
 
       wait_for(name)
 
-    ensure
+      # Don't clean up after a failure -- leaves the logs to review
       run "service", "rm", name if running?("service", name)
     end
 
@@ -643,6 +651,7 @@ module Deploy
           end
 
           Litestream.restore(swarm, config)
+          Litestream.derail(swarm, config)
 
           # This might not be the best idea if there's no backing
           Caddy.reload(swarm)
