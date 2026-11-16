@@ -115,6 +115,11 @@ module Deploy
 
       conn.scp.upload! io, path.to_s
     end
+
+    def exists?(conn, file)
+      Shell.log("checking for #{path file}")
+      conn.exec!("test -f #{path file} && echo true")&.strip == "true"
+    end
   end
 
   module SSH
@@ -645,13 +650,18 @@ module Deploy
           config = Config.for(name, production: false, slug:)
           swarm = Swarm.new(context)
 
+          db_needed = false
+
           SSH.connect(swarm.host) do |conn|
             Stack.prepare(conn, config)
             Caddy.add_domain(conn, config)
+            db_needed = !Remote.exists?(conn, "#{config.slug}/data/cast.sqlite")
           end
 
-          Litestream.restore(swarm, config)
-          Litestream.derail(swarm, config)
+          if db_needed
+            Litestream.restore(swarm, config)
+            Litestream.derail(swarm, config)
+          end
 
           # This might not be the best idea if there's no backing
           Caddy.reload(swarm)
