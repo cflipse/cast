@@ -9,7 +9,6 @@ require "open3"
 require "pathname"
 require "erb"
 
-
 module Deploy
   module Config
     extend self
@@ -115,6 +114,11 @@ module Deploy
       path = Remote.path(dest)
 
       conn.scp.upload! io, path.to_s
+    end
+
+    def exists?(conn, file)
+      Shell.log("checking for #{path file}")
+      conn.exec!("test -f #{path file} && echo true")&.strip == "true"
     end
   end
 
@@ -225,6 +229,14 @@ module Deploy
           "-o", "/data/cast.sqlite",
           "-if-db-not-exists", "/data/cast.sqlite"
     end
+
+    def derail(swarm, config)
+      swarm.action "derail-#{config.slug}",
+        "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
+        "alpine/sqlite",
+          "/data/cast.sqlite", 
+          "DROP TABLE IF EXISTS schema_migrations; DROP TABLE IF EXISTS ar_internal_metadata;"
+    end
   end
 
   module Docker
@@ -274,6 +286,24 @@ module Deploy
 
     def purge(conn, config)
       Remote.rm(conn, config.slug)
+    end
+
+    def migrate(swarm, config, secrets, remote)
+      swarm.action "migrate-#{config.slug}",
+        "--env", "RACK_ENV=production",
+        "--env", "DATABASE_URL=sqlite:///data/cast.sqlite",
+        "--secret", "source=#{secrets},target=env",
+        "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
+        remote,
+        "bundle", "exec", "hanami", "db", "prepare"
+    end
+
+    def deploy(swarm, config, secrets, remote)
+      swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
+        deployment: config.slug,
+        image: remote,
+        env_secret: secrets,
+      )
     end
   end
 
@@ -436,7 +466,7 @@ module Deploy
 
       wait_for(name)
 
-    ensure
+      # Don't clean up after a failure -- leaves the logs to review
       run "service", "rm", name if running?("service", name)
     end
 
@@ -547,11 +577,12 @@ module Deploy
       end
 
       class Teardown < Dry::CLI::Command
+        argument :name, default: Git.branch, desc: "subdomain to deploy to [defaults to branch]"
         option :context, default: "cast", desc: "local docker context"
-        option :name, desc: "deployment name"
 
-        def call(context:, name: nil)
-          config = Config.for("staging", slug: name)
+        def call(context:, name: nil, args: [])
+          slug = name.downcase.gsub(/[^[:alnum:]]/, '-')
+          config = Config.for(name, slug:)
           swarm = Swarm.new(context)
 
           swarm.remove(config.stack)
@@ -608,47 +639,58 @@ module Deploy
         end
       end
 
+      class SetupEphemeral < Dry::CLI::Command
+        desc "Prepare a deployment target"
+
+        argument :name, default: Git.branch, desc: "subdomain to deploy to [defaults to branch]"
+        option :context, default: "cast", desc: "local docker context"
+
+        def call(name:, context:, args:[])
+          slug = name.downcase.gsub(/[^[:alnum:]]/, '-')
+          config = Config.for(name, production: false, slug:)
+          swarm = Swarm.new(context)
+
+          db_needed = false
+
+          SSH.connect(swarm.host) do |conn|
+            Stack.prepare(conn, config)
+            Caddy.add_domain(conn, config)
+            db_needed = !Remote.exists?(conn, "#{config.slug}/data/cast.sqlite")
+          end
+
+          if db_needed
+            Litestream.restore(swarm, config)
+            Litestream.derail(swarm, config)
+          end
+
+          # This might not be the best idea if there's no backing
+          Caddy.reload(swarm)
+        end
+      end
+
       class DeployDocker < Dry::CLI::Command
         desc "deploy the current branch"
 
+        argument :name, default: Git.branch, desc: "subdomain to deploy to [defaults to branch]"
         option :context, default: "cast", desc: "local docker context"
 
-        def call(context:)
-          config = Config.for('staging')
+        def call(name:, context:, args: [])
+          slug = name.downcase.gsub(/[^[:alnum:]]/, '-')
+          config = Config.for(name, production: false, slug:)
           swarm = Swarm.new(context)
-
-          local = Builder.app(config)
-          remote = ""
 
           secrets = swarm.secret(config.vault, :app)
           abort "Synchronize secrets!" unless secrets
 
+          local = Builder.app(config)
+          remote = ""
+
           SSH.connect(swarm.host) do |conn|
-            Stack.prepare(conn, config)
-
             remote = Registry.publish(conn, local)
-
-            Caddy.add_domain(conn, config)
           end
 
-          Litestream.restore(swarm, config)
-
-          swarm.action "migrate-#{config.slug}",
-            "--env", "RACK_ENV=production",
-            "--env", "DATABASE_URL=sqlite:///data/cast.sqlite",
-            "--secret", "source=#{secrets},target=env",
-
-            "--mount", "type=bind,source=#{Remote.path config.slug}/data,destination=/data",
-            remote,
-            "bundle", "exec", "hanami", "db", "prepare"
-
-          swarm.deploy_stack(config.stack, "deploy/stack.yml.erb",
-            deployment: config.slug,
-            image: remote,
-            env_secret: secrets,
-          )
-
-          Caddy.reload(swarm)
+          Stack.migrate(swarm, config, secrets, remote)
+          Stack.deploy(swarm, config, secrets, remote)
         end
       end
 
@@ -703,7 +745,8 @@ module Deploy
 
       register "version", Version, aliases: ["v", "-v", "--version"]
       register "bootstrap", Bootstrap
-      register "deploy", DeployDocker
+      register "init", SetupEphemeral 
+      register "push", DeployDocker
       register "caddy update", DeployCaddy
       register "caddy reload", ReloadCaddy
       register "secrets sync", Secrets
