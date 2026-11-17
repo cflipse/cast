@@ -12,5 +12,8 @@ module Cast
 
     slice :admin, at: "/admin" do
     end
+
+    slice :auth, at: "/auth" do
+    end
   end
 end
