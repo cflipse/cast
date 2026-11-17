@@ -1,0 +1,6 @@
+<h1>OAuth result</h1>
+<% if profile %>
+  <pre><%= profile.inspect %></pre>
+<% else %>
+  <p>Failed: <%= failure %></p>
+<% end %>

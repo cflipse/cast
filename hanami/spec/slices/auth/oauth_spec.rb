@@ -7,6 +7,7 @@ RSpec.describe Auth::OAuth, :http do
     )
   }
 
+  let(:base_url) { "https://cast.test" }
   let(:token_url) { "https://oauth2.googleapis.com/token" }
   let(:userinfo_url) { "https://www.googleapis.com/oauth2/v2/userinfo" }
   let(:base_url) { "https://test.example.com" }

@@ -3,5 +3,8 @@
 
 module Auth
   class Action < Cast::Action
+    def handle(request, response)
+      super(request, response)
+    end
   end
 end

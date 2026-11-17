@@ -10,7 +10,9 @@ module Cast
 
     get "/up", to: "health.show"
 
-    slice :admin, at: "/admin" do
+    slice :auth, at: "/auth" do
+      get "/check", to: "check"
+      get "/callback", to: "callback"
     end
 
     slice :auth, at: "/auth" do
