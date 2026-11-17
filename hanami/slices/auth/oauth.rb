@@ -1,5 +1,5 @@
 module Auth
-  class OAuth < Dry::Operation
+  class OAuth < Operation
     include Deps["http", "settings"]
 
     def authorization_uri(state:)
@@ -8,7 +8,7 @@ module Auth
 
       params = URI.encode_www_form(
         client_id: settings.google_client_id,
-        redirect_uri: settings.oauth_redirect_uri,
+        redirect_uri: settings.oauth_redirect_path,
         response_type: "code",
         scope: scopes.join(" "),
         prompt: "select_account",

@@ -3,7 +3,7 @@ RSpec.describe Auth::OAuth, :http do
     double("Cast::Settings",
       google_client_id: "my client",
       google_client_secret: "sooper sekret",
-      oauth_redirect_uri: "/oauth",
+      oauth_redirect_path: "/oauth",
     )
   }
 
