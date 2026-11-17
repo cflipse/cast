@@ -1,4 +1,4 @@
-module Cast
+module Auth
   class OAuth < Dry::Operation
     include Deps["http", "settings"]
 

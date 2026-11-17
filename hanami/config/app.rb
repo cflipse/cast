@@ -4,6 +4,13 @@ require "hanami"
 
 module Cast
   class App < Hanami::App
+
+    config.shared_app_component_keys += [
+      "http",
+      "warden",
+    ]
+
+
     config.inflections do |inflect|
       inflect.acronym "OAuth"
     end

@@ -1,4 +1,4 @@
-RSpec.describe Cast::OAuth, :http do
+RSpec.describe Auth::OAuth, :http do
   let(:settings) {
     double("Cast::Settings",
       google_client_id: "my client",
