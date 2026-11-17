@@ -1,6 +1,6 @@
 RSpec.describe Auth::OAuth, :http do
   let(:settings) {
-    double("Cast::Settings",
+    double("Auth::Settings",
       google_client_id: "my client",
       google_client_secret: "sooper sekret",
       oauth_redirect_path: "/oauth",
@@ -9,25 +9,26 @@ RSpec.describe Auth::OAuth, :http do
 
   let(:token_url) { "https://oauth2.googleapis.com/token" }
   let(:userinfo_url) { "https://www.googleapis.com/oauth2/v2/userinfo" }
+  let(:base_url) { "https://test.example.com" }
 
   before do
   end
 
-  subject(:oauth) { described_class.new(settings:) }
+  subject(:oauth) { described_class.new(settings:, base_url:) }
 
   describe "authorization_uri" do
     let(:state) { "abc123" }
 
     it "interpolates the given state" do
-      expect(oauth.authorization_uri(state:)).to match(/state=abc123/)
+      expect(oauth.authorization_uri(state:, base_url:)).to match(/state=abc123/)
     end
 
     it "includes client_id" do
-      expect(oauth.authorization_uri(state:)).to match(/client_id=my\+client/)
+      expect(oauth.authorization_uri(state:, base_url:)).to match(/client_id=my\+client/)
     end
 
     it "includes the redirect_uri" do
-      expect(oauth.authorization_uri(state:)).to match(/redirect_uri=%2Foauth/)
+      expect(oauth.authorization_uri(state:, base_url:)).to match(/redirect_uri=#{CGI.escape('https://test.example.com/oauth')}/)
     end
   end
 
@@ -53,14 +54,14 @@ RSpec.describe Auth::OAuth, :http do
 
     context "when state does not match" do
       it "is a failure" do
-        res = oauth.call(params, state: "other")
+        res = oauth.call(params, state: "other", base_url:)
 
         expect(res).to be_failure
       end
     end
 
     it "posts to the googleAPI path" do
-      res = oauth.call(params, state:)
+      oauth.call(params, state:, base_url:)
 
       expect(WebMock).to have_requested(:post, token_url)
     end
@@ -71,7 +72,7 @@ RSpec.describe Auth::OAuth, :http do
       end
 
       it "is a failure" do
-        res = oauth.call(params, state:)
+        res = oauth.call(params, state:, base_url:)
 
         expect(res).to be_failure
       end
@@ -80,7 +81,7 @@ RSpec.describe Auth::OAuth, :http do
     it "returns the access token" do
       body["access_token"] = "access/12345"
 
-      oauth.call(params, state:)
+      oauth.call(params, state:, base_url:)
 
       expect(WebMock).to have_requested(:get, userinfo_url)
         .with(headers: {"Authorization" => "Bearer access/12345"})
@@ -89,13 +90,13 @@ RSpec.describe Auth::OAuth, :http do
     it "fails when the access token is missing" do
       body["access_token"] = nil
 
-      expect(oauth.call(params, state:)).to be_failure
+      expect(oauth.call(params, state:, base_url:)).to be_failure
     end
 
     it "extracts the profile from the response" do
       profile["email"] = "j@doe.com"
 
-      resp = oauth.call(params, state:)
+      resp = oauth.call(params, state:, base_url:)
       expect(resp.value!).to match("email" => "j@doe.com")
     end
   end

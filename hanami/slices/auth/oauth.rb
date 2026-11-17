@@ -2,13 +2,13 @@ module Auth
   class OAuth < Operation
     include Deps["http", "settings"]
 
-    def authorization_uri(state:)
+    def authorization_uri(state:, base_url:)
       scopes = %w[userinfo.email userinfo.profile]
         .map { |scope| "https://www.googleapis.com/auth/#{scope}" }
 
       params = URI.encode_www_form(
         client_id: settings.google_client_id,
-        redirect_uri: settings.oauth_redirect_path,
+        redirect_uri: redirect_uri(base_url),
         response_type: "code",
         scope: scopes.join(" "),
         prompt: "select_account",
@@ -18,24 +18,30 @@ module Auth
       "https://accounts.google.com/o/oauth2/v2/auth?#{params}"
     end
 
-    def call(params, state:)
+    def call(params, state:, base_url:)
       step match_states(state, params[:state])
-      token = step fetch_tokens(params[:code])
+      token = step fetch_tokens(params[:code], base_url)
 
       step profile(token)
     end
 
     private
 
+    def redirect_uri(base_url)
+      URI(base_url).tap do |uri|
+        uri.path = settings.oauth_redirect_path
+      end.to_s
+    end
+
     def match_states(initial, received)
       initial && (initial == received) ? Success() : Failure[:invalid_state]
     end
 
-    def fetch_tokens(code)
+    def fetch_tokens(code, base_url)
       payload = {
         client_id: settings.google_client_id,
         client_secret: settings.google_client_secret,
-        redirect_uri: settings.oauth_redirect_uri,
+        redirect_uri: redirect_uri(base_url),
         grant_type: "authorization_code",
         code: code,
       }
